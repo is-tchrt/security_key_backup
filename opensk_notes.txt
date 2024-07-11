@@ -1,0 +1,27 @@
+libraries/opensk/ctap/data_formats.rs line 286 struct MakeCredentialExtensions I'm adding a line for recovery. This will probably break the entire system.
+Added recovery as a struct field on line 327 of the same file.
+Added recovery: false in the test on line 1691 of the same file.
+Added let recovery = false on line 321 of the same file.
+
+Interestingly, it compiled just fine after that and doesn't seem to have broken the entire system, so that's nifty.
+
+Added let _recovery = extensions.recovery to line 870 of libraries/opensk/ctap/mod.rs
+It still compiles!
+
+Added a new enum on line 284 of data_formats.rs in ctap called RecoveryExtensionAction and a new struct on line 292 called RecoveryExtensionInputs. The allow_list field in that corresponds to the allowCredentials field in the Yubico instructions, but Rust wants it to be camel case, and google is using allow_list in other parts of the code for a similar thing, I think.
+
+Added recovery.rs to ctap and added pub mod recovery at line 29 of mod.rs in ctap.
+
+Added RecoveryExtensionOutput struct on line 299 of data_formats. The lengths of the arrays in there is currently just a guess, so we'll need to fix that eventually.
+
+Note: I think that the insert function persistent_store/src/store.rs will take any byte array, and I think that I can use the CBOR functions to encode just about anything as a binary string, so I just need to find an available address (I think I read that they don't use anything past 2048) and just store stuff there as CBOR encodings. Hopefully it won't be too difficult.
+
+So I think that env is storing all the information about the key. It has a store() function, which I think accesses the storage for the key, and store() has a find() and insert() function that get the value at a key or write a value to a key. I think that we can store values at 1000, because they say that it's reserved for future credential related objects, which I think is what our backup information would be.
+
+If debugging is turned on, I think that debug_ctap!(env, string) will print string to console, which could be useful.
+
+I think that opensk/src/ctap/storage.rs, line 48, has the function that creates the initial storage. I think we could just add a line to that function that initializes a YK struct and writes it to storage in the correct spot. From there we can do all the other edits to storage that we might want to do.
+
+Added BackupData struct to data_formats.rs on line 309. It has fields for public and private keys and for a state. I'll add the list of recovery seeds later, after I figure out how to format them.
+
+Commented out flags on lines 19 and 61 of crypto/src/ec/point.rs and lines 95 and 100 of crypto/src/ecdh.rs, as well as making from_bytes_compressed and to_bytes_compressed in ecdh.rs public functions.

@@ -1,5 +1,7 @@
+use sk_cbor::cbor_map;
+
 use super::data_formats::{
-    RecoveryExtensionAction, RecoveryExtensionInput, RecoveryExtensionOutput,
+    BackupData, RecoveryExtensionAction, RecoveryExtensionInput, RecoveryExtensionOutput,
 };
 use super::status_code::Ctap2StatusCode;
 
@@ -49,4 +51,10 @@ fn process_recover_command() -> RecoveryExtensionOutput {
         cred_id: None,
         sig: None,
     }
+}
+
+pub fn cbor_backups(backup_data: BackupData) -> sk_cbor::Value {
+    let mut public = [08; 65];
+    backup_data.public_key.to_bytes_uncompressed(&mut public);
+    cbor_map! {"public_key" => public}
 }

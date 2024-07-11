@@ -22,6 +22,7 @@ use alloc::vec::Vec;
 use arbitrary::Arbitrary;
 use arrayref::array_ref;
 use core::convert::TryFrom;
+use crypto::ecdh::{PubKey, SecKey};
 #[cfg(test)]
 use enum_iterator::IntoEnumIterator;
 use sk_cbor as cbor;
@@ -303,6 +304,12 @@ pub struct RecoveryExtensionOutput {
     pub creds: Option<Vec<[u8; 177]>>, //Each array is an attestedCredData byte array, which I think is 177 bytes, but I could be completely wrong.
     pub cred_id: Option<[u8; 82]>,
     pub sig: Option<[u8; 32]>, //The length here is a complete guess and is just there so that I can derive Clone, which I might need. We might need to remove the length later.
+}
+
+pub struct BackupData {
+    pub public_key: PubKey,
+    pub secret_key: SecKey,
+    pub recovery_state: u8,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

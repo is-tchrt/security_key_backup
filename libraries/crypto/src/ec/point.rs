@@ -16,9 +16,8 @@ use super::exponent256::ExponentP256;
 use super::gfp256::GFP256;
 use super::int256::Int256;
 use super::montgomery::Montgomery;
-#[cfg(feature = "std")]
-use arrayref::array_mut_ref;
-use arrayref::array_ref;
+// #[cfg(feature = "std")]
+use arrayref::{array_mut_ref, array_ref};
 use core::ops::Add;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 use zeroize::Zeroize;
@@ -59,7 +58,7 @@ impl PointP256 {
         }
     }
 
-    #[cfg(feature = "std")]
+    // #[cfg(feature = "std")]
     pub fn to_bytes_uncompressed(&self, bytes: &mut [u8; 65]) {
         bytes[0] = 0x04;
         self.x.to_int().to_bin(array_mut_ref![bytes, 1, 32]);
