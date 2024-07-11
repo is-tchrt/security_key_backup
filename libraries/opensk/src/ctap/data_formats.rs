@@ -282,6 +282,30 @@ impl From<PublicKeyCredentialDescriptor> for cbor::Value {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum RecoveryExtensionAction {
+    #[default]
+    State,
+    Generate,
+    Recover,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RecoveryExtensionInput {
+    //Has all the inputs from the RP for the recovery extension.
+    pub action: RecoveryExtensionAction,
+    pub allow_list: Option<Vec<PublicKeyCredentialDescriptor>>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RecoveryExtensionOutput {
+    pub action: RecoveryExtensionAction,
+    pub state: u32,
+    pub creds: Option<Vec<[u8; 177]>>, //Each array is an attestedCredData byte array, which I think is 177 bytes, but I could be completely wrong.
+    pub cred_id: Option<[u8; 82]>,
+    pub sig: Option<[u8; 32]>, //The length here is a complete guess and is just there so that I can derive Clone, which I might need. We might need to remove the length later.
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "fuzz", derive(Arbitrary))]
 pub struct MakeCredentialExtensions {
     pub hmac_secret: bool,

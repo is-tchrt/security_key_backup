@@ -26,6 +26,7 @@ pub mod hid;
 mod large_blobs;
 pub mod main_hid;
 mod pin_protocol;
+pub mod recovery;
 pub mod response;
 pub mod secret;
 pub mod status_code;
@@ -867,6 +868,7 @@ impl<E: Env> CtapState<E> {
             (true, Some(true)) => Some(env.rng().gen_uniform_u8x32().to_vec()),
             _ => None,
         };
+        let _recovery = extensions.recovery;
 
         // We decide on the algorithm early, but delay key creation since it takes time.
         // We rather do that later so all intermediate checks may return faster.
