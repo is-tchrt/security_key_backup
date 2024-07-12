@@ -51,11 +51,21 @@ struct PinProperties {
 /// Initializes the store by creating missing objects.
 pub fn init(env: &mut impl Env) -> Result<(), Ctap2StatusCode> {
     env.key_store().init()?;
+    // let backup_data = BackupData::init(env);
+    // let cbor_backup = cbor_backups(backup_data, env);
+    // env.store()
+    //     .insert(_RESERVED_CREDENTIALS.start, cbor_backup.as_slice())?;
+    make_backup_data(env);
+    Ok(())
+}
+
+//Makes and stores backup data.
+pub fn make_backup_data<E: Env>(env: &mut E) {
     let backup_data = BackupData::init(env);
     let cbor_backup = cbor_backups(backup_data, env);
     env.store()
-        .insert(_RESERVED_CREDENTIALS.start, cbor_backup.as_slice())?;
-    Ok(())
+        .insert(_RESERVED_CREDENTIALS.start, &cbor_backup.as_slice())
+        .unwrap();
 }
 
 //Returns the backup data.

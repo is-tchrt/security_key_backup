@@ -36,4 +36,8 @@ Added use statement for BackupData on line 37 of ctap/storage.rs and use stateme
 
 Made edits on init function on line 52 of ctap/storage.rs so that now it initializes and stores a BackupData struct that will have all the recovery information.
 
-Added get_backup_data function on line 61 of ctap/storage.rs.
+Added get_backup_data function on line 71 of ctap/storage.rs.
+
+Changed USB_DEBUGGING to false in boards/nordic/nrf52840dk_opensk/src/main.rs so that it will print debug to uart.
+
+Added make_backup_data function on line 63 of ctap/storage.rs.
