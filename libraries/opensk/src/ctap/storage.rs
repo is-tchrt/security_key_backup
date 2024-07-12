@@ -30,9 +30,13 @@ use alloc::vec;
 use alloc::vec::Vec;
 use arrayref::array_ref;
 use core::cmp;
+use key::_RESERVED_CREDENTIALS;
 use persistent_store::{fragment, StoreUpdate};
 #[cfg(feature = "config_command")]
 use sk_cbor::cbor_array_vec;
+
+use super::data_formats::BackupData;
+use super::recovery::cbor_backups;
 
 /// Wrapper for PIN properties.
 struct PinProperties {
@@ -47,6 +51,10 @@ struct PinProperties {
 /// Initializes the store by creating missing objects.
 pub fn init(env: &mut impl Env) -> Result<(), Ctap2StatusCode> {
     env.key_store().init()?;
+    let backup_data = BackupData::init(env);
+    let cbor_backup = cbor_backups(backup_data, env);
+    env.store()
+        .insert(_RESERVED_CREDENTIALS.start, cbor_backup.as_slice())?;
     Ok(())
 }
 

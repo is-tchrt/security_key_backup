@@ -27,3 +27,11 @@ Added BackupData struct to data_formats.rs on line 309. It has fields for public
 Commented out flags on lines 19 and 61 of crypto/src/ec/point.rs and lines 95 and 100 of crypto/src/ecdh.rs, as well as making from_bytes_compressed and to_bytes_compressed in ecdh.rs public functions.
 
 Added a public function to_bytes to the struct SecKey on line 93 of crypto/src/ecdh.rs
+
+Implemented init() for BackupData on line 315 of data_formats.rs.
+
+Note: I keep doing stuff with mutable references to env, which I think means I'm editing the actual environment of the key, which is probably pretty dangerous. I don't think it's a huge deal since we don't care a ton about security right now, but it's something to remember.
+
+Added use statement for BackupData on line 37 of ctap/storage.rs and use statement for cbor_backups from recovery.rs on line 38. Added use key::_RESERVED_CREDENTIALS on line 32.
+
+Made edits on init function on line 52 of ctap/storage.rs so that now it initializes and stores a BackupData struct that will have all the recovery information.

@@ -1,4 +1,10 @@
+use alloc::borrow::ToOwned;
+use alloc::vec::Vec;
 use sk_cbor::cbor_map;
+
+use crate::api::key_store::KeyStore;
+use crate::ctap::cbor_write;
+use crate::env::Env;
 
 use super::data_formats::{
     BackupData, RecoveryExtensionAction, RecoveryExtensionInput, RecoveryExtensionOutput,
@@ -53,10 +59,18 @@ fn process_recover_command() -> RecoveryExtensionOutput {
     }
 }
 
-pub fn cbor_backups(backup_data: BackupData) -> sk_cbor::Value {
-    let mut public = [08; 65];
-    backup_data.public_key.to_bytes_uncompressed(&mut public);
-    let mut secret = [08; 32];
-    backup_data.secret_key.to_bytes(&mut secret);
-    cbor_map! {"public_key" => public, "secret_key" => secret}
+pub fn cbor_backups<E: Env>(backup_data: BackupData, env: &mut E) -> Vec<u8> {
+    // let mut public = [08; 65];
+    // backup_data.public_key.to_bytes_uncompressed(&mut public);
+    // let mut secret = [08; 32];
+    // backup_data.secret_key.to_bytes(&mut secret);
+    let wrap_key = env.key_store().wrap_key::<E>().unwrap();
+    let secret = backup_data
+        .secret_key
+        .to_cbor::<E>(env.rng(), &wrap_key)
+        .unwrap();
+    let cbor_value = cbor_map! {"secret_key" => secret, "public_key" => backup_data.public_key};
+    let mut bytes: Vec<u8> = Vec::new();
+    cbor_write(cbor_value, &mut bytes).expect("Couldn't write backup data");
+    bytes.to_owned()
 }

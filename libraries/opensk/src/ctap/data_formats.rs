@@ -22,7 +22,6 @@ use alloc::vec::Vec;
 use arbitrary::Arbitrary;
 use arrayref::array_ref;
 use core::convert::TryFrom;
-use crypto::ecdh::{PubKey, SecKey};
 #[cfg(test)]
 use enum_iterator::IntoEnumIterator;
 use sk_cbor as cbor;
@@ -307,9 +306,21 @@ pub struct RecoveryExtensionOutput {
 }
 
 pub struct BackupData {
-    pub public_key: PubKey,
-    pub secret_key: SecKey,
+    pub secret_key: PrivateKey,
+    pub public_key: CoseKey,
     pub recovery_state: u8,
+}
+
+impl BackupData {
+    pub fn init<E: Env>(env: &mut E) -> BackupData {
+        let secret_key = PrivateKey::new(env, SignatureAlgorithm::Es256);
+        let public_key = secret_key.get_pub_key::<E>().unwrap();
+        BackupData {
+            public_key,
+            secret_key,
+            recovery_state: 0,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
