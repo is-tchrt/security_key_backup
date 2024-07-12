@@ -35,3 +35,5 @@ Note: I keep doing stuff with mutable references to env, which I think means I'm
 Added use statement for BackupData on line 37 of ctap/storage.rs and use statement for cbor_backups from recovery.rs on line 38. Added use key::_RESERVED_CREDENTIALS on line 32.
 
 Made edits on init function on line 52 of ctap/storage.rs so that now it initializes and stores a BackupData struct that will have all the recovery information.
+
+Added get_backup_data function on line 61 of ctap/storage.rs.

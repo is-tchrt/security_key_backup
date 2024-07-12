@@ -1,8 +1,9 @@
 use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
-use sk_cbor::cbor_map;
+use sk_cbor::{cbor_map, destructure_cbor_map};
 
 use crate::api::key_store::KeyStore;
+use crate::api::private_key::PrivateKey;
 use crate::ctap::cbor_write;
 use crate::env::Env;
 
@@ -12,11 +13,12 @@ use super::data_formats::{
 use super::status_code::Ctap2StatusCode;
 
 //Takes RecoveryExtensionInput, processes it and returns the appropriate output.
-pub fn process_recovery(
+pub fn process_recovery<E: Env>(
     inputs: RecoveryExtensionInput,
+    env: &mut E,
 ) -> Result<RecoveryExtensionOutput, Ctap2StatusCode> {
     if inputs.action == RecoveryExtensionAction::State {
-        Ok(process_state_command())
+        Ok(process_state_command(env))
     } else if inputs.action == RecoveryExtensionAction::Generate {
         Ok(process_generate_command())
     } else if inputs.action == RecoveryExtensionAction::Recover {
@@ -27,7 +29,7 @@ pub fn process_recovery(
 }
 
 //Retrieves the state and returns a RecoveryExtensionOutput struct with the appropriate information.
-fn process_state_command() -> RecoveryExtensionOutput {
+fn process_state_command<E: Env>(_env: &mut E) -> RecoveryExtensionOutput {
     RecoveryExtensionOutput {
         action: RecoveryExtensionAction::State,
         state: 0,
@@ -69,8 +71,32 @@ pub fn cbor_backups<E: Env>(backup_data: BackupData, env: &mut E) -> Vec<u8> {
         .secret_key
         .to_cbor::<E>(env.rng(), &wrap_key)
         .unwrap();
-    let cbor_value = cbor_map! {"secret_key" => secret, "public_key" => backup_data.public_key};
+    let cbor_value =
+        cbor_map! {"secret_key" => secret, "recovery_state" => backup_data.recovery_state};
     let mut bytes: Vec<u8> = Vec::new();
     cbor_write(cbor_value, &mut bytes).expect("Couldn't write backup data");
     bytes.to_owned()
+}
+
+//Takes a vector of cbor data and returns a BackupData struct with the cbor data.
+pub fn cbor_read_backup<E: Env>(data: Option<Vec<u8>>, env: &mut E) -> BackupData {
+    let backup = data.unwrap().into_cbor_value();
+    let map = backup.extract_map().unwrap();
+    destructure_cbor_map! {
+        let {
+            "recovery_state" => state,
+            "secret_key" => secret,
+        } = map;
+    }
+    let secret_key_cbor = secret.unwrap();
+    let recovery_state = state.unwrap().extract_unsigned().unwrap();
+    let secret_key =
+        PrivateKey::from_cbor::<E>(&env.key_store().wrap_key::<E>().unwrap(), secret_key_cbor)
+            .unwrap();
+    let public_key = secret_key.get_pub_key::<E>().unwrap();
+    BackupData {
+        secret_key,
+        public_key,
+        recovery_state,
+    }
 }

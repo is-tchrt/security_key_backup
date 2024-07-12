@@ -308,7 +308,7 @@ pub struct RecoveryExtensionOutput {
 pub struct BackupData {
     pub secret_key: PrivateKey,
     pub public_key: CoseKey,
-    pub recovery_state: u8,
+    pub recovery_state: u64,
 }
 
 impl BackupData {
