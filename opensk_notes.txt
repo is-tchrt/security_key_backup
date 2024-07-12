@@ -25,3 +25,5 @@ I think that opensk/src/ctap/storage.rs, line 48, has the function that creates 
 Added BackupData struct to data_formats.rs on line 309. It has fields for public and private keys and for a state. I'll add the list of recovery seeds later, after I figure out how to format them.
 
 Commented out flags on lines 19 and 61 of crypto/src/ec/point.rs and lines 95 and 100 of crypto/src/ecdh.rs, as well as making from_bytes_compressed and to_bytes_compressed in ecdh.rs public functions.
+
+Added a public function to_bytes to the struct SecKey on line 93 of crypto/src/ecdh.rs

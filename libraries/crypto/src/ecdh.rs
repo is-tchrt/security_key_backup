@@ -89,6 +89,10 @@ impl SecKey {
         let a = a.unwrap();
         Some(SecKey { a })
     }
+
+    pub fn to_bytes(self, bytes: &mut [u8; 32]) {
+        self.a.to_int().to_bin(bytes);
+    }
 }
 
 impl PubKey {

@@ -56,5 +56,7 @@ fn process_recover_command() -> RecoveryExtensionOutput {
 pub fn cbor_backups(backup_data: BackupData) -> sk_cbor::Value {
     let mut public = [08; 65];
     backup_data.public_key.to_bytes_uncompressed(&mut public);
-    cbor_map! {"public_key" => public}
+    let mut secret = [08; 32];
+    backup_data.secret_key.to_bytes(&mut secret);
+    cbor_map! {"public_key" => public, "secret_key" => secret}
 }
