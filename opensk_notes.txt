@@ -54,3 +54,5 @@ Added use AAGUID_LENGTH to data_formats.rs
 Added use crypto::ecdh::PubKey to line 26 of data formats.rs
 
 Temporarily commented out the only_with_debug flag thing on lines 26 and 33 of main.rs. I'm going to commit and push that change to see if it will print without the debug flags.
+
+Added use core::fmt::write on line 33 of storage.rs.

@@ -23,14 +23,14 @@ extern crate core;
 extern crate lang_items;
 
 use core::convert::TryFrom;
-// #[cfg(feature = "debug_ctap")]
+#[cfg(feature = "debug_ctap")]
 use core::fmt::Write;
 #[cfg(feature = "with_ctap1")]
 use ctap2::env::tock::blink_leds;
 use ctap2::env::tock::{switch_off_leds, wink_leds, TockEnv};
 #[cfg(feature = "with_ctap1")]
 use libtock_buttons::Buttons;
-// #[cfg(feature = "debug_ctap")]
+#[cfg(feature = "debug_ctap")]
 use libtock_console::Console;
 #[cfg(feature = "debug_ctap")]
 use libtock_console::ConsoleWriter;
@@ -152,16 +152,11 @@ fn main() {
     #[cfg(feature = "debug_ctap")]
     writeln!(writer, "Entering main ctap loop").unwrap();
     loop {
-        // opensk::ctap::storage::make_backup_data(ctap.env());
-        // opensk::ctap::recovery::cbor_read_backup(
-        //     opensk::ctap::storage::_get_backup_data(ctap.env()),
-        //     ctap.env(),
-        // );
-        writeln!(
-            Console::<SyscallImplementation>::writer(),
-            "Is this idea working?"
-        )
-        .unwrap();
+        opensk::ctap::storage::make_backup_data(ctap.env());
+        opensk::ctap::recovery::cbor_read_backup(
+            opensk::ctap::storage::_get_backup_data(ctap.env()),
+            ctap.env(),
+        );
         #[cfg(feature = "with_ctap1")]
         let num_buttons = Buttons::<SyscallImplementation>::count().ok().unwrap();
 

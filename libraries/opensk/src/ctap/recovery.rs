@@ -2,6 +2,7 @@ use core::convert::TryInto;
 
 use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
+use core::fmt::Write;
 use crypto::ecdh::PubKey;
 use sk_cbor::values::IntoCborValue;
 use sk_cbor::{cbor_map, destructure_cbor_map, Value};
@@ -104,6 +105,14 @@ pub fn cbor_read_backup<E: Env>(data: Option<Vec<u8>>, env: &mut E) -> BackupDat
             .unwrap();
     let public_key = secret_key.get_pub_key::<E>().unwrap();
     // debug_ctap!(env, "Recovering backup public key: {:#?}", public_key);
+    writeln!(
+        env.write(),
+        "Recovering backup public key: {:#?}, state: {:#?}, seed: {:#?}",
+        public_key,
+        recovery_state,
+        recovery_seeds
+    )
+    .unwrap();
     BackupData {
         secret_key,
         public_key,

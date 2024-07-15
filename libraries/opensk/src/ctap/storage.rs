@@ -30,6 +30,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use arrayref::array_ref;
 use core::cmp;
+use core::fmt::Write;
 use key::_RESERVED_CREDENTIALS;
 use persistent_store::{fragment, StoreUpdate};
 #[cfg(feature = "config_command")]
@@ -67,6 +68,14 @@ pub fn make_backup_data<E: Env>(env: &mut E) {
     //     "Making backup public key: {:#?}",
     //     backup_data.public_key
     // );
+    writeln!(
+        env.write(),
+        "Making backup public key: {:#?}, state: {:#?}, seeds: {:#?}",
+        backup_data.public_key,
+        backup_data.recovery_state,
+        backup_data.recovery_seeds
+    )
+    .unwrap();
     let cbor_backup = cbor_backups(backup_data, env);
     env.store()
         .insert(_RESERVED_CREDENTIALS.start, &cbor_backup.as_slice())
