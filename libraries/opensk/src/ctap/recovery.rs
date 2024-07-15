@@ -1,14 +1,16 @@
 use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
-use sk_cbor::{cbor_map, destructure_cbor_map};
+use sk_cbor::values::IntoCborValue;
+use sk_cbor::{cbor_map, destructure_cbor_map, Value};
 
+use crate::api::customization::AAGUID_LENGTH;
 use crate::api::key_store::KeyStore;
 use crate::api::private_key::PrivateKey;
 use crate::ctap::cbor_write;
 use crate::env::Env;
 
 use super::data_formats::{
-    BackupData, RecoveryExtensionAction, RecoveryExtensionInput, RecoveryExtensionOutput,
+    BackupData, CoseKey, RecoveryExtensionAction, RecoveryExtensionInput, RecoveryExtensionOutput,
 };
 use super::status_code::Ctap2StatusCode;
 
@@ -102,4 +104,16 @@ pub fn cbor_read_backup<E: Env>(data: Option<Vec<u8>>, env: &mut E) -> BackupDat
         recovery_state,
         recovery_seeds: Vec::new(),
     }
+}
+
+pub fn cbor_write_recovery_seed(seed: (u8, [u8; AAGUID_LENGTH], CoseKey)) -> Value {
+    cbor_map! {0 => seed.0, 1 => seed.1, 2 => seed.2}
+}
+
+pub fn cbor_write_recovery_seeds(seed_list: Vec<(u8, [u8; AAGUID_LENGTH], CoseKey)>) -> Value {
+    let mut encoded_seeds = Vec::new();
+    for seed in seed_list.iter() {
+        encoded_seeds.push(cbor_write_recovery_seed(seed.clone()));
+    }
+    encoded_seeds.into_cbor_value()
 }
