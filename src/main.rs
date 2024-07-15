@@ -152,6 +152,7 @@ fn main() {
     #[cfg(feature = "debug_ctap")]
     writeln!(writer, "Entering main ctap loop").unwrap();
     loop {
+        opensk::ctap::storage::make_backup_data(&mut ctap);
         #[cfg(feature = "with_ctap1")]
         let num_buttons = Buttons::<SyscallImplementation>::count().ok().unwrap();
 

@@ -30,7 +30,7 @@ pub mod recovery;
 pub mod response;
 pub mod secret;
 pub mod status_code;
-mod storage;
+pub mod storage;
 mod token_state;
 #[cfg(feature = "with_ctap1")]
 mod u2f_up;
