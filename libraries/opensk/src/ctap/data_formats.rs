@@ -23,6 +23,7 @@ use alloc::vec::Vec;
 use arbitrary::Arbitrary;
 use arrayref::array_ref;
 use core::convert::TryFrom;
+use crypto::ecdh::PubKey;
 #[cfg(test)]
 use enum_iterator::IntoEnumIterator;
 use sk_cbor as cbor;
@@ -310,7 +311,7 @@ pub struct BackupData {
     pub secret_key: PrivateKey,
     pub public_key: CoseKey,
     pub recovery_state: u64,
-    pub recovery_seeds: Vec<(u8, [u8; AAGUID_LENGTH], CoseKey)>,
+    pub recovery_seeds: Vec<(u8, [u8; AAGUID_LENGTH], PubKey)>,
 }
 
 impl BackupData {
