@@ -29,10 +29,11 @@ pub fn process_recovery<E: Env>(
 }
 
 //Retrieves the state and returns a RecoveryExtensionOutput struct with the appropriate information.
-fn process_state_command<E: Env>(_env: &mut E) -> RecoveryExtensionOutput {
+fn process_state_command<E: Env>(env: &mut E) -> RecoveryExtensionOutput {
+    let backup_data = cbor_read_backup(super::storage::_get_backup_data(env), env);
     RecoveryExtensionOutput {
         action: RecoveryExtensionAction::State,
-        state: 0,
+        state: backup_data.recovery_state,
         creds: None,
         cred_id: None,
         sig: None,
@@ -99,5 +100,6 @@ pub fn cbor_read_backup<E: Env>(data: Option<Vec<u8>>, env: &mut E) -> BackupDat
         secret_key,
         public_key,
         recovery_state,
+        recovery_seeds: Vec::new(),
     }
 }

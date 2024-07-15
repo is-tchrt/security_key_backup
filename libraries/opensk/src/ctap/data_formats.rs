@@ -14,6 +14,7 @@
 
 use super::status_code::Ctap2StatusCode;
 use crate::api::crypto::{ecdh, ecdsa, EC_FIELD_SIZE};
+use crate::api::customization::AAGUID_LENGTH;
 use crate::api::private_key::PrivateKey;
 use crate::env::{AesKey, Env};
 use alloc::string::String;
@@ -299,7 +300,7 @@ pub struct RecoveryExtensionInput {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RecoveryExtensionOutput {
     pub action: RecoveryExtensionAction,
-    pub state: u32,
+    pub state: u64,
     pub creds: Option<Vec<[u8; 177]>>, //Each array is an attestedCredData byte array, which I think is 177 bytes, but I could be completely wrong.
     pub cred_id: Option<[u8; 82]>,
     pub sig: Option<[u8; 32]>, //The length here is a complete guess and is just there so that I can derive Clone, which I might need. We might need to remove the length later.
@@ -309,6 +310,7 @@ pub struct BackupData {
     pub secret_key: PrivateKey,
     pub public_key: CoseKey,
     pub recovery_state: u64,
+    pub recovery_seeds: Vec<(u8, [u8; AAGUID_LENGTH], CoseKey)>,
 }
 
 impl BackupData {
@@ -319,6 +321,7 @@ impl BackupData {
             public_key,
             secret_key,
             recovery_state: 0,
+            recovery_seeds: Vec::new(),
         }
     }
 }
