@@ -45,14 +45,12 @@ Added make_backup_data function on line 63 of ctap/storage.rs.
 On line 33 of mod.rs I made storage a public module so that I can print stuff in the main loop. Felt cute, might change it later.
 
 *IMPORTANT*
-Added something on line 155 of main.rs which WE SHOULD REMOVE because it's just there to print some data, and it also RESETS THE BACKUP STORAGE every time through the loop, so it's not very good to have permanently.
+Added something on line 274 of main.rs which WE SHOULD REMOVE because it's just there to print some data, and it also RESETS THE BACKUP STORAGE every time through the loop, so it's not very good to have permanently.
 
-Also added on line 156 to recover and print the backup key to see if it's the same as the one we originally created. Delete 155 and 156 at some point, because they sort of mess up the system.
+Also added on line 275 to recover and print the backup key to see if it's the same as the one we originally created. Delete 155 and 156 at some point, because they sort of mess up the system.
 
 Added use AAGUID_LENGTH to data_formats.rs
 
 Added use crypto::ecdh::PubKey to line 26 of data formats.rs
-
-Temporarily commented out the only_with_debug flag thing on lines 26 and 33 of main.rs. I'm going to commit and push that change to see if it will print without the debug flags.
 
 Added use core::fmt::write on line 33 of storage.rs.
