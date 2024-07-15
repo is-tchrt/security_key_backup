@@ -23,7 +23,7 @@ extern crate core;
 extern crate lang_items;
 
 use core::convert::TryFrom;
-#[cfg(feature = "debug_ctap")]
+// #[cfg(feature = "debug_ctap")]
 use core::fmt::Write;
 #[cfg(feature = "with_ctap1")]
 use ctap2::env::tock::blink_leds;
