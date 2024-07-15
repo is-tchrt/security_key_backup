@@ -94,6 +94,7 @@ pub fn cbor_read_backup<E: Env>(data: Option<Vec<u8>>, env: &mut E) -> BackupDat
         PrivateKey::from_cbor::<E>(&env.key_store().wrap_key::<E>().unwrap(), secret_key_cbor)
             .unwrap();
     let public_key = secret_key.get_pub_key::<E>().unwrap();
+    debug_ctap!(env, "Recovering backup public key: {:#?}", public_key);
     BackupData {
         secret_key,
         public_key,
