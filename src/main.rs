@@ -30,7 +30,7 @@ use ctap2::env::tock::blink_leds;
 use ctap2::env::tock::{switch_off_leds, wink_leds, TockEnv};
 #[cfg(feature = "with_ctap1")]
 use libtock_buttons::Buttons;
-#[cfg(feature = "debug_ctap")]
+// #[cfg(feature = "debug_ctap")]
 use libtock_console::Console;
 #[cfg(feature = "debug_ctap")]
 use libtock_console::ConsoleWriter;
@@ -157,6 +157,11 @@ fn main() {
         //     opensk::ctap::storage::_get_backup_data(ctap.env()),
         //     ctap.env(),
         // );
+        writeln!(
+            Console::<SyscallImplementation>::writer(),
+            "Is this idea working?"
+        )
+        .unwrap();
         #[cfg(feature = "with_ctap1")]
         let num_buttons = Buttons::<SyscallImplementation>::count().ok().unwrap();
 

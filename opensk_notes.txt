@@ -52,3 +52,5 @@ Also added on line 156 to recover and print the backup key to see if it's the sa
 Added use AAGUID_LENGTH to data_formats.rs
 
 Added use crypto::ecdh::PubKey to line 26 of data formats.rs
+
+Temporarily commented out the only_with_debug flag thing on line 33 of main.rs. I'm going to commit and push that change to see if it will print without the debug flags.
