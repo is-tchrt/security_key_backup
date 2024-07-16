@@ -748,7 +748,7 @@ impl<E: Env> CtapState<E> {
         let backup_data = BackupData::init(env);
         writeln!(
             env.write(),
-            "Writing public key: {:#?}, state: {:#?}, seeds: {:#?}",
+            "Writing public key: {:#?}, state: {:?}, seeds: {:#?}",
             backup_data.public_key,
             backup_data.recovery_state,
             backup_data.recovery_seeds
