@@ -30,6 +30,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use arrayref::array_ref;
 use core::cmp;
+use core::fmt::Write;
 use key::_RESERVED_CREDENTIALS;
 use persistent_store::{fragment, StoreUpdate};
 #[cfg(feature = "config_command")]
@@ -75,9 +76,17 @@ pub fn make_backup_data<E: Env>(env: &mut E) {
 
 //Returns the backup data.
 pub fn get_backup_data<E: Env>(env: &mut E) -> Option<Vec<u8>> {
-    env.store()
+    writeln!(env.write(), "Before reading storage").unwrap();
+    let stuff = env
+        .store()
         .find(_RESERVED_CREDENTIALS.start)
-        .expect("Couldn't find backup data")
+        .expect("Couldn't find backup data");
+    writeln!(
+        env.write(),
+        "After reading storage but still in get_backup_data."
+    )
+    .unwrap();
+    stuff
 }
 
 /// Returns the credential at the given key.
