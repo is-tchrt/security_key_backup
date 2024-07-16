@@ -142,8 +142,11 @@ pub fn cbor_backups<E: Env>(backup_data: BackupData, env: &mut E) -> Vec<u8> {
 
 //Takes a vector of cbor data and returns a BackupData struct with the cbor data.
 pub fn cbor_read_backup<E: Env>(data: Option<Vec<u8>>, env: &mut E) -> BackupData {
+    writeln!(env.write(), "Working at start of cbor_read_backup").unwrap();
     let backup = data.unwrap().into_cbor_value();
+    writeln!(env.write(), "Working after converting to cbor value").unwrap();
     let map = backup.extract_map().unwrap();
+    writeln!(env.write(), "Working after extracting a map").unwrap();
     destructure_cbor_map! {
         let {
             "recovery_seeds" => seeds,
@@ -151,18 +154,23 @@ pub fn cbor_read_backup<E: Env>(data: Option<Vec<u8>>, env: &mut E) -> BackupDat
             "secret_key" => secret,
         } = map;
     }
+    writeln!(env.write(), "Working after destructuring cbor map").unwrap();
     let secret_key_cbor = secret.unwrap();
     let recovery_state = state.unwrap().extract_unsigned().unwrap();
+    writeln!(env.write(), "Working after extracting state").unwrap();
     let recovey_seeds_cbor = seeds.unwrap().extract_array().unwrap();
+    writeln!(env.write(), "Working after extracting array").unwrap();
     let recovery_seeds = cbor_read_recovery_seeds(recovey_seeds_cbor);
+    writeln!(env.write(), "Working after read_recovery_seeds").unwrap();
     let secret_key =
         PrivateKey::from_cbor::<E>(&env.key_store().wrap_key::<E>().unwrap(), secret_key_cbor)
             .unwrap();
+    writeln!(env.write(), "Working after extracting secret_key").unwrap();
     let public_key = secret_key.get_pub_key::<E>().unwrap();
     // debug_ctap!(env, "Recovering backup public key: {:#?}", public_key);
     writeln!(
         env.write(),
-        "Recovering backup public key: {:#?}, state: {:#?}, seed: {:#?}",
+        "Recovering backup public key: {:#?}, state: {:?}, seed: {:#?}",
         public_key,
         recovery_state,
         recovery_seeds
