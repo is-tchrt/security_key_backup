@@ -1,6 +1,7 @@
 use core::convert::TryInto;
 
 use alloc::borrow::ToOwned;
+use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt::Write;
 use crypto::ecdh::PubKey;
@@ -55,6 +56,41 @@ fn process_generate_command() -> RecoveryExtensionOutput {
         cred_id: None,
         sig: None,
     }
+}
+
+fn _process_recovery_seeds(seed_list: Vec<(u8, [u8; AAGUID_LENGTH], PubKey)>) -> Vec<Vec<u8>> {
+    let mut creds = Vec::new();
+    for seed in seed_list.iter() {
+        let att_cred_data = _process_recovery_seed(seed.clone());
+        if att_cred_data.is_ok() {
+            creds.push(att_cred_data.unwrap());
+        }
+    }
+    creds
+}
+
+//Creates attCredData for one recovery seed.
+fn _process_recovery_seed(
+    seed: (u8, [u8; AAGUID_LENGTH], PubKey),
+) -> Result<Vec<u8>, Ctap2StatusCode> {
+    if seed.0 != 0 {
+        Err(Ctap2StatusCode::CTAP2_ERR_UNSUPPORTED_ALGORITHM)
+    } else {
+        let credential_id = _make_credential(seed.clone());
+        let mut att_cred_data = seed.1.to_vec();
+        att_cred_data.extend(vec![0x00, credential_id.len() as u8]);
+        att_cred_data.extend(credential_id);
+        Ok(att_cred_data)
+    }
+}
+
+//Gets credential for one seed.
+fn _make_credential(seed: (u8, [u8; AAGUID_LENGTH], PubKey)) -> [u8; 82] {
+    let cred_id = [08; 81];
+    let mut full_cred_id = [08; 82];
+    full_cred_id[0] = seed.0;
+    full_cred_id.copy_from_slice(&cred_id);
+    full_cred_id
 }
 
 //Processes backup credential for account recovery.

@@ -271,11 +271,6 @@ fn main() {
                 switch_off_leds::<SyscallImplementation>();
             }
         }
-        // opensk::ctap::storage::make_backup_data(ctap.env());
-        opensk::ctap::recovery::cbor_read_backup(
-            opensk::ctap::storage::_get_backup_data(ctap.env()),
-            ctap.env(),
-        );
     }
 }
 

@@ -48,9 +48,16 @@ On line 33 of mod.rs I made storage a public module so that I can print stuff in
 Added something on line 274 of main.rs which WE SHOULD REMOVE because it's just there to print some data, and it also RESETS THE BACKUP STORAGE every time through the loop, so it's not very good to have permanently.
 
 Also added on line 275 to recover and print the backup key to see if it's the same as the one we originally created. Delete 155 and 156 at some point, because they sort of mess up the system.
+*Edit* I removed those parts.
 
 Added use AAGUID_LENGTH to data_formats.rs
 
 Added use crypto::ecdh::PubKey to line 26 of data formats.rs
 
 Added use core::fmt::write on line 33 of storage.rs.
+
+Added use::data_formats on line 82 of mod.rs and made the key module public on line 15 of storage.rs
+
+Added some stuff starting around line 746 of mod.rs to try and get something to print when I make a credential. Delete it later. Added use core::fmt::Write on line 82 of mod.rs. Delete it later.
+
+This is currently not compiling, work on that tomorrow.
