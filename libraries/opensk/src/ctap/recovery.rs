@@ -18,6 +18,7 @@ use super::data_formats::{
     BackupData, RecoveryExtensionAction, RecoveryExtensionInput, RecoveryExtensionOutput,
 };
 use super::status_code::Ctap2StatusCode;
+use super::storage::get_backup_data;
 
 //Takes RecoveryExtensionInput, processes it and returns the appropriate output.
 pub fn process_recovery<E: Env>(
@@ -27,7 +28,7 @@ pub fn process_recovery<E: Env>(
     if inputs.action == RecoveryExtensionAction::State {
         Ok(process_state_command(env))
     } else if inputs.action == RecoveryExtensionAction::Generate {
-        Ok(process_generate_command())
+        Ok(process_generate_command(env))
     } else if inputs.action == RecoveryExtensionAction::Recover {
         Ok(process_recover_command())
     } else {
@@ -37,7 +38,7 @@ pub fn process_recovery<E: Env>(
 
 //Retrieves the state and returns a RecoveryExtensionOutput struct with the appropriate information.
 fn process_state_command<E: Env>(env: &mut E) -> RecoveryExtensionOutput {
-    let backup_data = cbor_read_backup(super::storage::_get_backup_data(env), env);
+    let backup_data = cbor_read_backup(super::storage::get_backup_data(env), env);
     RecoveryExtensionOutput {
         action: RecoveryExtensionAction::State,
         state: backup_data.recovery_state,
@@ -48,20 +49,23 @@ fn process_state_command<E: Env>(env: &mut E) -> RecoveryExtensionOutput {
 }
 
 //Creates backup credentials for each stored backup device.
-fn process_generate_command() -> RecoveryExtensionOutput {
+fn process_generate_command<E: Env>(env: &mut E) -> RecoveryExtensionOutput {
+    let cbor_backup_data = get_backup_data(env);
+    let backup_data = cbor_read_backup(cbor_backup_data, env);
+    let creds = Some(process_recovery_seeds(backup_data.recovery_seeds));
     RecoveryExtensionOutput {
         action: RecoveryExtensionAction::Generate,
         state: 0,
-        creds: None,
+        creds,
         cred_id: None,
         sig: None,
     }
 }
 
-fn _process_recovery_seeds(seed_list: Vec<(u8, [u8; AAGUID_LENGTH], PubKey)>) -> Vec<Vec<u8>> {
+fn process_recovery_seeds(seed_list: Vec<(u8, [u8; AAGUID_LENGTH], PubKey)>) -> Vec<Vec<u8>> {
     let mut creds = Vec::new();
     for seed in seed_list.iter() {
-        let att_cred_data = _process_recovery_seed(seed.clone());
+        let att_cred_data = process_recovery_seed(seed.clone());
         if att_cred_data.is_ok() {
             creds.push(att_cred_data.unwrap());
         }
@@ -70,13 +74,13 @@ fn _process_recovery_seeds(seed_list: Vec<(u8, [u8; AAGUID_LENGTH], PubKey)>) ->
 }
 
 //Creates attCredData for one recovery seed.
-fn _process_recovery_seed(
+fn process_recovery_seed(
     seed: (u8, [u8; AAGUID_LENGTH], PubKey),
 ) -> Result<Vec<u8>, Ctap2StatusCode> {
     if seed.0 != 0 {
         Err(Ctap2StatusCode::CTAP2_ERR_UNSUPPORTED_ALGORITHM)
     } else {
-        let credential_id = _make_credential(seed.clone());
+        let credential_id = make_credential(seed.clone());
         let mut att_cred_data = seed.1.to_vec();
         att_cred_data.extend(vec![0x00, credential_id.len() as u8]);
         att_cred_data.extend(credential_id);
@@ -85,7 +89,7 @@ fn _process_recovery_seed(
 }
 
 //Gets credential for one seed.
-fn _make_credential(seed: (u8, [u8; AAGUID_LENGTH], PubKey)) -> [u8; 82] {
+fn make_credential(seed: (u8, [u8; AAGUID_LENGTH], PubKey)) -> [u8; 82] {
     let cred_id = [08; 81];
     let mut full_cred_id = [08; 82];
     full_cred_id[0] = seed.0;

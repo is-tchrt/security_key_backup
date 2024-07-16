@@ -74,7 +74,7 @@ pub fn make_backup_data<E: Env>(env: &mut E) {
 }
 
 //Returns the backup data.
-pub fn _get_backup_data<E: Env>(env: &mut E) -> Option<Vec<u8>> {
+pub fn get_backup_data<E: Env>(env: &mut E) -> Option<Vec<u8>> {
     env.store()
         .find(_RESERVED_CREDENTIALS.start)
         .expect("Couldn't find backup data")

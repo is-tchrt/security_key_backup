@@ -761,7 +761,7 @@ impl<E: Env> CtapState<E> {
                 &cbor_backup.as_slice(),
             )
             .unwrap();
-        recovery::cbor_read_backup(storage::_get_backup_data(env), env);
+        recovery::cbor_read_backup(storage::get_backup_data(env), env);
 
         self.pin_uv_auth_precheck(env, &pin_uv_auth_param, pin_uv_auth_protocol, channel)?;
 
