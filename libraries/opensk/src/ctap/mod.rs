@@ -79,10 +79,10 @@ use alloc::vec;
 use alloc::vec::Vec;
 use byteorder::{BigEndian, ByteOrder};
 use core::convert::TryFrom;
-use core::fmt::Write;
-use data_formats::BackupData;
+// use core::fmt::Write;
+// use data_formats::BackupData;
 use rand_core::RngCore;
-use recovery::cbor_backups;
+// use recovery::cbor_backups;
 use sk_cbor as cbor;
 use sk_cbor::cbor_map_options;
 

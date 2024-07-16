@@ -15,7 +15,8 @@ use crate::ctap::cbor_write;
 use crate::env::Env;
 
 use super::data_formats::{
-    BackupData, RecoveryExtensionAction, RecoveryExtensionInput, RecoveryExtensionOutput,
+    BackupData, PublicKeyCredentialDescriptor, RecoveryExtensionAction, RecoveryExtensionInput,
+    RecoveryExtensionOutput,
 };
 use super::status_code::Ctap2StatusCode;
 use super::storage::get_backup_data;
@@ -108,6 +109,20 @@ fn process_recover_command() -> RecoveryExtensionOutput {
     }
 }
 
+fn _process_allow_credentials(
+    allow_credentials: Vec<PublicKeyCredentialDescriptor>,
+) -> Vec<[u8; 81]> {
+    let mut credential_ids = Vec::new();
+    for cred in allow_credentials.iter() {
+        if cred.key_id[0] == 0 {
+            let cred_id: [u8; 81] = cred.key_id[1..].try_into().unwrap();
+            credential_ids.push(cred_id);
+        }
+    }
+    credential_ids
+}
+
+//Writes a BackupData struct to a Vec<u8> in cbor format.
 pub fn cbor_backups<E: Env>(backup_data: BackupData, env: &mut E) -> Vec<u8> {
     // let mut public = [08; 65];
     // backup_data.public_key.to_bytes_uncompressed(&mut public);
