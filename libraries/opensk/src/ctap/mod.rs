@@ -79,10 +79,10 @@ use alloc::vec;
 use alloc::vec::Vec;
 use byteorder::{BigEndian, ByteOrder};
 use core::convert::TryFrom;
-use core::fmt::Write;
-use data_formats::BackupData;
+// use core::fmt::Write;
+// use data_formats::BackupData;
 use rand_core::RngCore;
-use recovery::cbor_backups;
+// use recovery::cbor_backups;
 use sk_cbor as cbor;
 use sk_cbor::cbor_map_options;
 
@@ -745,22 +745,22 @@ impl<E: Env> CtapState<E> {
             enterprise_attestation,
         } = make_credential_params;
 
-        let backup_data = BackupData::init(env);
-        writeln!(
-            env.write(),
-            "Writing public key: {:#?}, state: {:?}, seeds: {:#?}",
-            backup_data.public_key,
-            backup_data.recovery_state,
-            backup_data.recovery_seeds
-        )
-        .unwrap();
-        let cbor_backup = cbor_backups(backup_data, env);
-        env.store()
-            .insert(
-                storage::key::_RESERVED_CREDENTIALS.start,
-                &cbor_backup.as_slice(),
-            )
-            .unwrap();
+        // let backup_data = BackupData::init(env);
+        // writeln!(
+        //     env.write(),
+        //     "Writing public key: {:#?}, state: {:?}, seeds: {:#?}",
+        //     backup_data.public_key,
+        //     backup_data.recovery_state,
+        //     backup_data.recovery_seeds
+        // )
+        // .unwrap();
+        // let cbor_backup = cbor_backups(backup_data, env);
+        // env.store()
+        //     .insert(
+        //         storage::key::_RESERVED_CREDENTIALS.start,
+        //         &cbor_backup.as_slice(),
+        //     )
+        //     .unwrap();
         recovery::cbor_read_backup(storage::get_backup_data(env), env);
 
         self.pin_uv_auth_precheck(env, &pin_uv_auth_param, pin_uv_auth_protocol, channel)?;
