@@ -129,12 +129,12 @@ pub fn cbor_backups<E: Env>(backup_data: BackupData, env: &mut E) -> Vec<u8> {
     // let mut secret = [08; 32];
     // backup_data.secret_key.to_bytes(&mut secret);
     let wrap_key = env.key_store().wrap_key::<E>().unwrap();
-    let secret = backup_data
+    let _secret = backup_data
         .secret_key
         .to_cbor::<E>(env.rng(), &wrap_key)
         .unwrap();
     let recovery_seeds = cbor_write_recovery_seeds(backup_data.recovery_seeds);
-    let cbor_value = cbor_map! {"secret_key" => secret, "recovery_state" => backup_data.recovery_state, "recovery_seeds" => recovery_seeds};
+    let cbor_value = cbor_map! {"secret_key" => 7, "recovery_state" => backup_data.recovery_state, "recovery_seeds" => recovery_seeds};
     let mut bytes: Vec<u8> = Vec::new();
     cbor_write(cbor_value, &mut bytes).expect("Couldn't write backup data");
     bytes.to_owned()
