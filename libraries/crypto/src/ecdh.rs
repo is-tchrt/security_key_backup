@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::ec::exponent256::NonZeroExponentP256;
+use super::ec::exponent256::{ExponentP256, NonZeroExponentP256};
 use super::ec::int256;
 use super::ec::int256::Int256;
 use super::ec::point::PointP256;
@@ -24,15 +24,15 @@ pub const NBYTES: usize = int256::NBYTES;
 /// A private key for ECDH.
 ///
 /// Never call zeroize explicitly, to not invalidate any invariants.
-#[derive(Zeroize)]
+#[derive(Zeroize, Debug, Clone)]
 pub struct SecKey {
-    a: NonZeroExponentP256,
+    pub a: NonZeroExponentP256,
 }
 
 /// A public key for ECDH.
 ///
 /// Never call zeroize explicitly, to not invalidate any invariants.
-#[derive(Clone, Debug, PartialEq, Zeroize)]
+#[derive(Clone, Debug, PartialEq, Zeroize, Copy)]
 pub struct PubKey {
     p: PointP256,
 }
@@ -90,8 +90,12 @@ impl SecKey {
         Some(SecKey { a })
     }
 
-    pub fn to_bytes(self, bytes: &mut [u8; 32]) {
+    /// Writes a private key's exponent's bytes to the passed in array.
+    pub fn to_bytes(&self, bytes: &mut [u8; 32]) {
         self.a.to_int().to_bin(bytes);
+    }
+    pub fn to_exponent(&self) -> &ExponentP256{
+        self.a.as_exponent()
     }
 }
 
@@ -101,7 +105,7 @@ impl PubKey {
         PointP256::from_bytes_uncompressed_vartime(bytes).map(|p| PubKey { p })
     }
 
-    // #[cfg(test)]
+    //#[cfg(test)]
     pub fn to_bytes_uncompressed(&self, bytes: &mut [u8; 65]) {
         self.p.to_bytes_uncompressed(bytes);
     }
@@ -117,6 +121,7 @@ impl PubKey {
         self.p.getx().to_int().to_bin(x);
         self.p.gety().to_int().to_bin(y);
     }
+
 }
 
 #[cfg(test)]

@@ -1,3 +1,4 @@
+
 // Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,7 +47,7 @@ pub struct Signature {
 /// A public key for ECDSA.
 ///
 /// Never call zeroize explicitly, to not invalidate any invariants.
-#[derive(Clone, Zeroize)]
+#[derive(Clone, Zeroize, Debug)]
 pub struct PubKey {
     p: PointP256,
 }
@@ -271,6 +272,10 @@ impl PubKey {
         H: Hash256,
     {
         self.verify_hash_vartime(&H::hash(msg), sign)
+    }
+
+    pub fn get_point(&self) -> &PointP256 {
+        &self.p
     }
 }
 

@@ -11,13 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+ 
 use super::exponent256::ExponentP256;
 use super::gfp256::GFP256;
 use super::int256::Int256;
 use super::montgomery::Montgomery;
-// #[cfg(feature = "std")]
-use arrayref::{array_mut_ref, array_ref};
+//#[cfg(feature = "std")]
+use arrayref::array_mut_ref;
+use arrayref::array_ref;
 use core::ops::Add;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 use zeroize::Zeroize;
@@ -58,7 +59,7 @@ impl PointP256 {
         }
     }
 
-    // #[cfg(feature = "std")]
+    //#[cfg(feature = "std")]
     pub fn to_bytes_uncompressed(&self, bytes: &mut [u8; 65]) {
         bytes[0] = 0x04;
         self.x.to_int().to_bin(array_mut_ref![bytes, 1, 32]);
@@ -80,14 +81,14 @@ impl PointP256 {
         PointP256::from_affine(&point.to_affine())
     }
 
-    fn from_affine(affine: &PointAffine) -> PointP256 {
+    pub fn from_affine(affine: &PointAffine) -> PointP256 {
         PointP256 {
             x: affine.x.montgomery_to_field(),
             y: affine.y.montgomery_to_field(),
         }
     }
 
-    fn to_affine(&self) -> PointAffine {
+    pub fn to_affine(&self) -> PointAffine {
         PointAffine {
             x: Montgomery::field_to_montgomery(&self.x),
             y: Montgomery::field_to_montgomery(&self.y),
@@ -193,7 +194,7 @@ impl PointProjective {
         }
     }
 
-    fn to_affine(&self) -> PointAffine {
+    pub fn to_affine(&self) -> PointAffine {
         let zinv = self.z.inv();
         let x = &self.x * &zinv;
         let y = &self.y * &zinv;
@@ -218,7 +219,7 @@ impl PointProjective {
 
     /** Arithmetic **/
     // Complete formula from https://eprint.iacr.org/2015/1060.pdf, Algorithm 5.
-    fn add_mixed(&self, other: &PointAffine) -> PointProjective {
+    pub fn add_mixed(&self, other: &PointAffine) -> PointProjective {
         // Steps 1-2 (same as add).
         let mut t0 = &self.x * &other.x;
         let t1 = &self.y * &other.y;
@@ -318,7 +319,7 @@ impl PointProjective {
     }
 
     // Compute scalar*G
-    fn scalar_base_mul(scalar: &ExponentP256) -> PointProjective {
+    pub fn scalar_base_mul(scalar: &ExponentP256) -> PointProjective {
         let mut n = PointProjective {
             x: Montgomery::ZERO,
             y: Montgomery::ZERO,

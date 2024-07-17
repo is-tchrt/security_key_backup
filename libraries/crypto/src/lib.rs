@@ -16,6 +16,7 @@
 #![feature(wrapping_int_impl)]
 
 extern crate alloc;
+extern crate core;
 
 pub mod aes256;
 pub mod cbc;
@@ -26,6 +27,7 @@ pub mod hkdf;
 pub mod hmac;
 pub mod sha256;
 pub mod util;
+pub mod backup;
 
 /// Trait for hash functions that returns a 256-bit hash.
 ///
