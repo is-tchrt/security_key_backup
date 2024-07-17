@@ -23,6 +23,7 @@ use alloc::vec::Vec;
 use arbitrary::Arbitrary;
 use arrayref::array_ref;
 use core::convert::TryFrom;
+use core::fmt::Write;
 use crypto::ecdh::PubKey;
 #[cfg(test)]
 use enum_iterator::IntoEnumIterator;
@@ -317,6 +318,7 @@ pub struct BackupData {
 impl BackupData {
     pub fn init<E: Env>(env: &mut E) -> BackupData {
         let secret_key = PrivateKey::new(env, SignatureAlgorithm::Es256);
+        writeln!(env.write(), "secret key: {:?}", secret_key).unwrap();
         let public_key = secret_key.get_pub_key::<E>().unwrap();
         BackupData {
             public_key,

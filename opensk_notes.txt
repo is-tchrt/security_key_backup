@@ -61,3 +61,5 @@ Added use::data_formats on line 82 of mod.rs and made the key module public on l
 Added some stuff starting around line 746 of mod.rs to try and get something to print when I make a credential. Delete it later. Added use core::fmt::Write on line 82 of mod.rs. Delete it later.
 
 This is currently not compiling, work on that tomorrow.
+
+Added use core::fmt::Write on line 26 of data_formats.rs.
