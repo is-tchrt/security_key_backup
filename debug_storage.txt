@@ -1,0 +1,21 @@
+Multiple serial port options found. Which would you like to use?
+[0]	/dev/ttyS1 - n/a
+[1]	/dev/ttyS2 - n/a
+[2]	/dev/ttyS3 - n/a
+[3]	/dev/ttyS0 - n/a
+[4]	/dev/ttyACM0 - J-Link - CDC
+[5]	/dev/ttyACM1 - J-Link - CDC
+
+Which option? [0] Before reading storage
+After reading storage but still in get_backup_data.
+Working at start of cbor_read_backup
+Working after converting to cbor value
+Initialization complete. Entering main loop
+NRF52 HW INFO: Variant: Unspecified, Part: N52840, Package: QI, Ram: K256, Flash: K1024
+Bus reset
+tock$ Bus reset
+Bus reset
+Before reading storage
+After reading storage but still in get_backup_data.
+Working at start of cbor_read_backup
+Working after converting to cbor value

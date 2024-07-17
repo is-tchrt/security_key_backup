@@ -11,7 +11,7 @@ use sk_cbor::{cbor_map, destructure_cbor_map, Value};
 use crate::api::customization::AAGUID_LENGTH;
 use crate::api::key_store::KeyStore;
 use crate::api::private_key::PrivateKey;
-use crate::ctap::cbor_write;
+use crate::ctap::{cbor_read, cbor_write};
 use crate::env::Env;
 
 use super::data_formats::{
@@ -143,7 +143,8 @@ pub fn cbor_backups<E: Env>(backup_data: BackupData, env: &mut E) -> Vec<u8> {
 //Takes a vector of cbor data and returns a BackupData struct with the cbor data.
 pub fn cbor_read_backup<E: Env>(data: Option<Vec<u8>>, env: &mut E) -> BackupData {
     writeln!(env.write(), "Working at start of cbor_read_backup").unwrap();
-    let backup = data.unwrap().into_cbor_value();
+    // let backup = data.unwrap().into_cbor_value();
+    let backup = cbor_read(&data.unwrap().as_slice()).unwrap();
     writeln!(env.write(), "Working after converting to cbor value").unwrap();
     let map = backup.extract_map().unwrap();
     writeln!(env.write(), "Working after extracting a map").unwrap();
