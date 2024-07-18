@@ -303,9 +303,21 @@ pub struct RecoveryExtensionInput {
 pub struct RecoveryExtensionOutput {
     pub action: RecoveryExtensionAction,
     pub state: u64,
-    pub creds: Option<Vec<Vec<u8>>>, //Each array is an attestedCredData byte array, which I think is 177 bytes, but I could be completely wrong.
-    pub cred_id: Option<[u8; 82]>,
+    pub creds: Option<Vec<cbor::Value>>, //Each array is an attestedCredData byte array, which I think is 177 bytes, but I could be completely wrong.
+    pub cred_id: Option<Vec<u8>>,
     pub sig: Option<Vec<u8>>, //The length here is a complete guess and is just there so that I can derive Clone, which I might need. We might need to remove the length later.
+}
+
+impl From<RecoveryExtensionOutput> for cbor::Value {
+    fn from(output: RecoveryExtensionOutput) -> Self {
+        cbor_map_options! {
+            "action" => (output.action as i64),
+            "state" => output.state,
+            "creds" => output.creds,
+            "credId" => output.cred_id,
+            "sig" => output.sig,
+        }
+    }
 }
 
 pub struct BackupData {
@@ -337,7 +349,7 @@ pub struct MakeCredentialExtensions {
     pub min_pin_length: bool,
     pub cred_blob: Option<Vec<u8>>,
     pub large_blob_key: Option<bool>,
-    pub recovery: Option<bool>,
+    pub recovery: Option<RecoveryExtensionInput>,
 }
 
 impl TryFrom<cbor::Value> for MakeCredentialExtensions {

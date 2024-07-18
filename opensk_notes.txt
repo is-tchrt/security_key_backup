@@ -5,7 +5,7 @@ Added let recovery = false on line 321 of the same file.
 
 Interestingly, it compiled just fine after that and doesn't seem to have broken the entire system, so that's nifty.
 
-Added let _recovery = extensions.recovery to line 870 of libraries/opensk/ctap/mod.rs
+Added let recovery = extensions.recovery to line 881 of libraries/opensk/ctap/mod.rs
 It still compiles!
 
 Added a new enum on line 284 of data_formats.rs in ctap called RecoveryExtensionAction and a new struct on line 292 called RecoveryExtensionInputs. The allow_list field in that corresponds to the allowCredentials field in the Yubico instructions, but Rust wants it to be camel case, and google is using allow_list in other parts of the code for a similar thing, I think.
@@ -63,3 +63,11 @@ Added some stuff starting around line 746 of mod.rs to try and get something to 
 This is currently not compiling, work on that tomorrow.
 
 Added use core::fmt::Write on line 26 of data_formats.rs.
+
+Added || recovery.is_some() on line 886 of mod.rs
+
+Added some processing at line 958 of mod.rs to handle the recovery extension processing. Also added "recovery" => recovery_output at or near line 985 to add the extension output to the output of the whole function.
+
+Impl From<RecoveryExtensionOutput> for cbor::Value on line 311 of data_formats.rs
+
+Added rp_id.clone on line 904 of mod.rs

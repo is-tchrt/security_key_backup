@@ -78,12 +78,12 @@ fn process_recovery_seeds<E: Env>(
     seed_list: Vec<(u8, [u8; AAGUID_LENGTH], PubKey)>,
     env: &mut E,
     rp_id: String,
-) -> Vec<Vec<u8>> {
+) -> Vec<Value> {
     let mut creds = Vec::new();
     for seed in seed_list.iter() {
         let att_cred_data = process_recovery_seed(seed.clone(), env, rp_id.clone());
         if att_cred_data.is_ok() {
-            creds.push(att_cred_data.unwrap());
+            creds.push(att_cred_data.unwrap().into_cbor_value());
         }
     }
     creds
@@ -146,7 +146,7 @@ fn process_recover_command<E: Env>(
         sec_key_bytes.expose_secret_to_vec().try_into().unwrap(), //This is probably not super secure, so if someone wants to actually use this code they should fix it.
     ) {
         let sig = private_key.sign_and_encode::<E>(&auth_data).unwrap();
-        let cred_id = make_full_cred_id(0, credential_id);
+        let cred_id = make_full_cred_id(0, credential_id).to_vec();
         Ok(RecoveryExtensionOutput {
             action: RecoveryExtensionAction::Recover,
             state: backup_data.recovery_state,

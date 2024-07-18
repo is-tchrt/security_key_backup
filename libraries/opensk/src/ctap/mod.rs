@@ -878,10 +878,12 @@ impl<E: Env> CtapState<E> {
         } else {
             None
         };
+        let recovery = extensions.recovery;
         let has_extension_output = extensions.hmac_secret
             || extensions.cred_protect.is_some()
             || min_pin_length
-            || has_cred_blob_output;
+            || has_cred_blob_output
+            || recovery.is_some();
         if has_extension_output {
             flags |= ED_FLAG
         };
@@ -889,7 +891,6 @@ impl<E: Env> CtapState<E> {
             (true, Some(true)) => Some(env.rng().gen_uniform_u8x32().to_vec()),
             _ => None,
         };
-        let _recovery = extensions.recovery;
 
         // We decide on the algorithm early, but delay key creation since it takes time.
         // We rather do that later so all intermediate checks may return faster.
@@ -900,7 +901,7 @@ impl<E: Env> CtapState<E> {
                 key_type: PublicKeyCredentialType::PublicKey,
                 credential_id: random_id.clone(),
                 private_key: private_key.clone(),
-                rp_id,
+                rp_id: rp_id.clone(),
                 user_handle: user.user_id,
                 // This input is user provided, so we crop it to 64 byte for storage.
                 // The UTF8 encoding is always preserved, so the string might end up shorter.
@@ -954,11 +955,34 @@ impl<E: Env> CtapState<E> {
                 None
             };
             let cred_protect_output = extensions.cred_protect.and(cred_protect_policy);
+            let recovery_output = if recovery.is_some() {
+                let inputs = recovery.unwrap();
+                let recovery_output_result =
+                    recovery::process_recovery(inputs, env, rp_id.clone(), auth_data.clone());
+                if recovery_output_result.is_err() {
+                    return Err(recovery_output_result.err().unwrap());
+                }
+                Some(recovery_output_result.unwrap())
+            } else {
+                None
+            };
+            // if let Some(inputs) = recovery {
+            //     let recovery_output_result =
+            //         recovery::process_recovery(inputs, env, rp_id, auth_data);
+            //     if recovery_output_result.is_err() {
+            //         recovery_output_result
+            //     } else {
+            //         let recovery_output = Some(recovery_output_result.unwrap());
+            //     }
+            // } else {
+            //     let recovery_output: Option<RecoveryExtensionOutput> = None;
+            // }
             let extensions_output = cbor_map_options! {
                 "credBlob" => cred_blob_output,
                 "credProtect" => cred_protect_output,
                 "hmac-secret" => hmac_secret_output,
                 "minPinLength" => min_pin_length_output,
+                "recovery" => recovery_output
             };
             cbor_write(extensions_output, &mut auth_data)?;
         }
