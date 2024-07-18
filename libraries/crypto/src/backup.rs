@@ -119,14 +119,14 @@ pub fn backup_sk(cred_key: [u8;32], sec_key_bytes: [u8; 32]) -> SecKey { //makes
 /////////////////////////////Implementing stage 2/////////////////////////////
 
 //creates a tuple of a cred_id and a public key that are passed to the RP for proving a backup key
-pub fn calc_cred_id<R>(rp_id: String, rng: &mut R) -> ([u8; 81], PubKey)
+pub fn calc_cred_id<R>(rp_id: String, rng: &mut R, backup: PubKey) -> ([u8; 81], PubKey)
 where
     R: RngCore,
 {
     let key_pair= generate_ephemeral_pair(rng); //key pair is (secKey, pubKey)
     let cred_key = cred_key(&key_pair.0, &key_pair.1);
     let mac_key = mac_key(&key_pair.0, &key_pair.1);
-    let backup_pk = backup_pk(&cred_key, &key_pair.1);
+    let backup_pk = backup_pk(&cred_key, &backup);
     let cred_id = make_cred_id(key_pair.1, mac_key, rp_id);
     let backup_info = (cred_id, backup_pk);
     backup_info
