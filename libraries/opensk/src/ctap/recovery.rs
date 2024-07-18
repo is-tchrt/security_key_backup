@@ -10,7 +10,6 @@ use crypto::ecdh::PubKey;
 use sk_cbor::values::IntoCborValue;
 use sk_cbor::{cbor_map, destructure_cbor_map, Value};
 
-use crate::api::crypto::ecdsa::Ecdsa;
 use crate::api::customization::AAGUID_LENGTH;
 use crate::api::key_store::KeyStore;
 use crate::api::private_key::PrivateKey;
@@ -29,24 +28,25 @@ pub fn process_recovery<E: Env>(
     inputs: RecoveryExtensionInput,
     env: &mut E,
     rp_id: String,
+    auth_data: Vec<u8>,
 ) -> Result<RecoveryExtensionOutput, Ctap2StatusCode> {
+    let backup_data = cbor_read_backup(get_backup_data(env), env);
     if inputs.action == RecoveryExtensionAction::State {
-        Ok(process_state_command(env))
+        Ok(process_state_command(backup_data.recovery_state))
     } else if inputs.action == RecoveryExtensionAction::Generate {
-        Ok(process_generate_command(env, rp_id))
+        Ok(process_generate_command(env, rp_id, backup_data))
     } else if inputs.action == RecoveryExtensionAction::Recover {
-        Ok(process_recover_command())
+        process_recover_command::<E>(inputs.allow_list.unwrap(), rp_id, auth_data, backup_data)
     } else {
         Err(Ctap2StatusCode::CTAP1_ERR_OTHER)
     }
 }
 
 //Retrieves the state and returns a RecoveryExtensionOutput struct with the appropriate information.
-fn process_state_command<E: Env>(env: &mut E) -> RecoveryExtensionOutput {
-    let backup_data = cbor_read_backup(super::storage::get_backup_data(env), env);
+fn process_state_command(state: u64) -> RecoveryExtensionOutput {
     RecoveryExtensionOutput {
         action: RecoveryExtensionAction::State,
-        state: backup_data.recovery_state,
+        state,
         creds: None,
         cred_id: None,
         sig: None,
@@ -54,9 +54,11 @@ fn process_state_command<E: Env>(env: &mut E) -> RecoveryExtensionOutput {
 }
 
 //Creates backup credentials for each stored backup device.
-fn process_generate_command<E: Env>(env: &mut E, rp_id: String) -> RecoveryExtensionOutput {
-    let cbor_backup_data = get_backup_data(env);
-    let backup_data = cbor_read_backup(cbor_backup_data, env);
+fn process_generate_command<E: Env>(
+    env: &mut E,
+    rp_id: String,
+    backup_data: BackupData,
+) -> RecoveryExtensionOutput {
     let creds = Some(process_recovery_seeds(
         backup_data.recovery_seeds,
         env,
@@ -121,19 +123,44 @@ fn make_credential<E: Env>(
     (full_cred_id, public_key)
 }
 
+//Handles the logic of adding the alg byte to the beginning of a credential_id
+fn make_full_cred_id(alg: u8, cred_id: [u8; 81]) -> [u8; 82] {
+    let mut full_cred_id = [08; 82];
+    full_cred_id[0] = alg;
+    full_cred_id[1..].copy_from_slice(&cred_id);
+    full_cred_id
+}
+
 //Processes backup credential for account recovery.
-fn process_recover_command() -> RecoveryExtensionOutput {
-    RecoveryExtensionOutput {
-        action: RecoveryExtensionAction::Recover,
-        state: 0,
-        creds: None,
-        cred_id: None,
-        sig: None,
+fn process_recover_command<E: Env>(
+    allow_credentials: Vec<PublicKeyCredentialDescriptor>,
+    rp_id: String,
+    auth_data: Vec<u8>,
+    backup_data: BackupData,
+) -> Result<RecoveryExtensionOutput, Ctap2StatusCode> {
+    let sec_key_bytes = backup_data.secret_key.to_bytes();
+    let credential_ids = process_allow_credentials(allow_credentials);
+    if let Some((private_key, credential_id)) = get_credential_pair(
+        credential_ids,
+        rp_id,
+        sec_key_bytes.expose_secret_to_vec().try_into().unwrap(), //This is probably not super secure, so if someone wants to actually use this code they should fix it.
+    ) {
+        let sig = private_key.sign_and_encode::<E>(&auth_data).unwrap();
+        let cred_id = make_full_cred_id(0, credential_id);
+        Ok(RecoveryExtensionOutput {
+            action: RecoveryExtensionAction::Recover,
+            state: backup_data.recovery_state,
+            creds: None,
+            cred_id: Some(cred_id),
+            sig: Some(sig),
+        })
+    } else {
+        Err(Ctap2StatusCode::CTAP2_ERR_NO_CREDENTIALS)
     }
 }
 
 //Processes allow_credentials and returns a list of isolated credential_ids.
-fn _process_allow_credentials(
+fn process_allow_credentials(
     allow_credentials: Vec<PublicKeyCredentialDescriptor>,
 ) -> Vec<[u8; 81]> {
     let mut credential_ids = Vec::new();
@@ -146,15 +173,23 @@ fn _process_allow_credentials(
     credential_ids
 }
 
-//Sign the authenticator data for this operation and return the signature.
-fn get_signature(
+//Gets the recovery credential_id and private key, formats the private_key as a PrivateKey, and returns them.
+fn get_credential_pair(
     credential_list: Vec<[u8; 81]>,
-    auth_data: Vec<u8>,
     rp_id: String,
     sec_key_bytes: [u8; 32],
-) -> Vec<u8> {
-    let private_key_bytes = backup::confirm_cred_ids(credential_list, rp_id, sec_key_bytes);
-    Ecdsa::SecretKey::from(private_key_bytes);
+) -> Option<(PrivateKey, [u8; 81])> {
+    let credential_option = backup::confirm_cred_ids(credential_list, rp_id, sec_key_bytes);
+    if credential_option.is_some() {
+        let credential = credential_option.unwrap();
+        let mut private_key_bytes = [0u8; 32];
+        credential.0.to_bytes(&mut private_key_bytes);
+        // let private_key = SecKey::from_bytes(&private_key_bytes).unwrap();
+        let private_key = PrivateKey::new_ecdsa_from_bytes(&private_key_bytes).unwrap();
+        Some((private_key, credential.1))
+    } else {
+        None
+    }
 }
 
 //Writes a BackupData struct to a Vec<u8> in cbor format.

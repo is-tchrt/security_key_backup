@@ -1,18 +1,14 @@
 /////////////////////////////This file implements the Yubico Backup functionality for the key./////////////////////////////
 
 //crates
-use rand_core::RngCore;
-use alloc::string::String;
 use crate::alloc::vec::Vec;
+use alloc::string::String;
+use rand_core::RngCore;
 
 //this section allows the use of libraries in the folders above
-use super::Hash256;
+use super::{ec, ecdsa, hkdf, hmac, Hash256};
 use crate::ecdh::{PubKey, SecKey};
 use crate::sha256::Sha256;
-use super::ecdsa;
-use super::hkdf;
-use super::hmac;
-use super::ec;
 
 /////////////////////////////utility functions/////////////////////////////
 
@@ -52,7 +48,8 @@ pub fn mac_key(sec_key: &SecKey, pub_key: &PubKey) -> [u8; 32] {
 }
 
 //this generates the public key that the RP uses to validate the backup
-pub fn backup_pk(cred_key: &[u8; 32], pub_key: &PubKey) -> PubKey { //makes B
+pub fn backup_pk(cred_key: &[u8; 32], pub_key: &PubKey) -> PubKey {
+    //makes B
 
     //this converts cred_id into the proper format to mul by the generator(G) of the EC
     let cred_int = ec::int256::Int256::from_bin(cred_key);
@@ -66,24 +63,25 @@ pub fn backup_pk(cred_key: &[u8; 32], pub_key: &PubKey) -> PubKey { //makes B
     let backup_public_key_ecdsa = ecdsa::PubKey::from_coordinates(&x, &y);
 
     // add the point we multiplied by G to the public key
-    let credential_public_as_projective =  mul_by_g.add_mixed(&backup_public_key_ecdsa.unwrap().get_point().to_affine());
+    let credential_public_as_projective =
+        mul_by_g.add_mixed(&backup_public_key_ecdsa.unwrap().get_point().to_affine());
 
     //convert to a point
-    let affine =credential_public_as_projective.to_affine();
+    let affine = credential_public_as_projective.to_affine();
     let point = ec::point::PointP256::from_affine(&affine);
 
     //set the x and y coordinates (allows us to convert back to a pubKey)
-    point.getx().to_int().to_bin(& mut x);
-    point.gety().to_int().to_bin(& mut y);
+    point.getx().to_int().to_bin(&mut x);
+    point.gety().to_int().to_bin(&mut y);
 
     //return a public key
     PubKey::from_coordinates(&x, &y).unwrap()
 }
 
 //makes a [u8; 81] credential id that is given to the RP for further verification of legit backup keys
-pub fn make_cred_id(pub_key: PubKey, mac_key: [u8; 32], rp_id: String)-> [u8; 81] {
+pub fn make_cred_id(pub_key: PubKey, mac_key: [u8; 32], rp_id: String) -> [u8; 81] {
     //converts pub_key to bytes
-    let mut pub_key_bytes= [0u8; 65];
+    let mut pub_key_bytes = [0u8; 65];
     pub_key.to_bytes_uncompressed(&mut pub_key_bytes);
 
     //cred id is made up of three parts, input_mac, mac_output, pub_key
@@ -95,7 +93,7 @@ pub fn make_cred_id(pub_key: PubKey, mac_key: [u8; 32], rp_id: String)-> [u8; 81
 
     //calc mac
     let mut mac_output = [0u8; 32];
-        hmac::hmac_256::<Sha256>(&mac_key, input_mac.as_slice(), &mut mac_output);
+    hmac::hmac_256::<Sha256>(&mac_key, input_mac.as_slice(), &mut mac_output);
 
     //put it all together into cred_id
     let mut cred_id = [0u8; 81]; // Initialize cred_id array
@@ -105,14 +103,18 @@ pub fn make_cred_id(pub_key: PubKey, mac_key: [u8; 32], rp_id: String)-> [u8; 81
 }
 
 //creates the private key that corresponds with the public key given to the RP
-pub fn backup_sk(cred_key: [u8;32], sec_key_bytes: [u8; 32]) -> SecKey { //makes b
+pub fn backup_sk(cred_key: [u8; 32], sec_key_bytes: [u8; 32]) -> SecKey {
+    //makes b
     let sec_key = SecKey::from_bytes(&sec_key_bytes).unwrap();
     let scalar = sec_key.to_exponent().to_int();
     let mod_n = ec::exponent256::ExponentP256::modn(scalar);
     let cred_int = ec::int256::Int256::from_bin(&cred_key);
     let cred_ex = ec::exponent256::ExponentP256::from_int_checked(cred_int).unwrap();
     let result = &cred_ex * &mod_n;
-    let sec_key = Some(SecKey{a: result.non_zero().unwrap()}).unwrap();
+    let sec_key = Some(SecKey {
+        a: result.non_zero().unwrap(),
+    })
+    .unwrap();
     sec_key
 }
 
@@ -123,7 +125,7 @@ pub fn calc_cred_id<R>(rp_id: String, rng: &mut R, backup: PubKey) -> ([u8; 81],
 where
     R: RngCore,
 {
-    let key_pair= generate_ephemeral_pair(rng); //key pair is (secKey, pubKey)
+    let key_pair = generate_ephemeral_pair(rng); //key pair is (secKey, pubKey)
     let cred_key = cred_key(&key_pair.0, &key_pair.1);
     let mac_key = mac_key(&key_pair.0, &key_pair.1);
     let backup_pk = backup_pk(&cred_key, &backup);
@@ -135,9 +137,13 @@ where
 /////////////////////////////Implementing stage 3/////////////////////////////
 
 //checks a vector of cred_ids to find the cred_id that was created for this backup key. returns the private key associated with that cred_id
-pub fn confirm_cred_ids(cred_id: Vec<[u8;81]>, rp_id: String, sec_key_bytes: [u8; 32] ) -> Option <SecKey>{
+pub fn confirm_cred_ids(
+    cred_id: Vec<[u8; 81]>,
+    rp_id: String,
+    sec_key_bytes: [u8; 32],
+) -> Option<(SecKey, [u8; 81])> {
     for id in cred_id {
-        if let Some(key) = confirm_cred_id(id, rp_id.clone(), sec_key_bytes){
+        if let Some(key) = confirm_cred_id(id, rp_id.clone(), sec_key_bytes) {
             return Some(key);
         }
     }
@@ -145,7 +151,11 @@ pub fn confirm_cred_ids(cred_id: Vec<[u8;81]>, rp_id: String, sec_key_bytes: [u8
 }
 
 //same as above, but takes a singular cred_id
-pub fn confirm_cred_id(cred_id: [u8;81], rp_id: String, sec_key_bytes: [u8; 32] ) -> Option <SecKey>{
+pub fn confirm_cred_id(
+    cred_id: [u8; 81],
+    rp_id: String,
+    sec_key_bytes: [u8; 32],
+) -> Option<(SecKey, [u8; 81])> {
     let cred_key_prime;
     let sec_key = SecKey::from_bytes(&sec_key_bytes).unwrap();
     let pub_key_bytes = &cred_id[..65];
@@ -154,10 +164,8 @@ pub fn confirm_cred_id(cred_id: [u8;81], rp_id: String, sec_key_bytes: [u8; 32] 
     let mac_key = mac_key(&sec_key, &pub_key);
     let cred_id_prime = make_cred_id(pub_key, mac_key, rp_id.clone());
     if cred_id == cred_id_prime.as_slice() {
-        Some(backup_sk(cred_key_prime, sec_key_bytes))
-    }
-    else {
+        Some((backup_sk(cred_key_prime, sec_key_bytes), cred_id_prime))
+    } else {
         None
     }
 }
-

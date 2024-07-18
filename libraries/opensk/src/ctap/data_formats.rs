@@ -305,7 +305,7 @@ pub struct RecoveryExtensionOutput {
     pub state: u64,
     pub creds: Option<Vec<Vec<u8>>>, //Each array is an attestedCredData byte array, which I think is 177 bytes, but I could be completely wrong.
     pub cred_id: Option<[u8; 82]>,
-    pub sig: Option<[u8; 32]>, //The length here is a complete guess and is just there so that I can derive Clone, which I might need. We might need to remove the length later.
+    pub sig: Option<Vec<u8>>, //The length here is a complete guess and is just there so that I can derive Clone, which I might need. We might need to remove the length later.
 }
 
 pub struct BackupData {
