@@ -79,10 +79,10 @@ use alloc::vec;
 use alloc::vec::Vec;
 use byteorder::{BigEndian, ByteOrder};
 use core::convert::TryFrom;
-use core::fmt::Write;
-use data_formats::BackupData;
+// use core::fmt::Write;
+// use data_formats::BackupData;
 use rand_core::RngCore;
-use recovery::cbor_backups;
+// use recovery::cbor_backups;
 use sk_cbor as cbor;
 use sk_cbor::cbor_map_options;
 
@@ -745,23 +745,23 @@ impl<E: Env> CtapState<E> {
             enterprise_attestation,
         } = make_credential_params;
 
-        let backup_data = BackupData::init(env);
-        writeln!(
-            env.write(),
-            "Writing public key: {:#?}, state: {:?}, seeds: {:#?}",
-            backup_data.public_key,
-            backup_data.recovery_state,
-            backup_data.recovery_seeds
-        )
-        .unwrap();
-        let cbor_backup = cbor_backups(backup_data, env);
-        env.store()
-            .insert(
-                storage::key::_RESERVED_CREDENTIALS.start,
-                &cbor_backup.as_slice(),
-            )
-            .unwrap();
-        recovery::cbor_read_backup(storage::get_backup_data(env), env);
+        // let backup_data = BackupData::init(env);
+        // writeln!(
+        //     env.write(),
+        //     "Writing public key: {:#?}, state: {:?}, seeds: {:#?}",
+        //     backup_data.public_key,
+        //     backup_data.recovery_state,
+        //     backup_data.recovery_seeds
+        // )
+        // .unwrap();
+        // let cbor_backup = cbor_backups(backup_data, env);
+        // env.store()
+        //     .insert(
+        //         storage::key::_RESERVED_CREDENTIALS.start,
+        //         &cbor_backup.as_slice(),
+        //     )
+        //     .unwrap();
+        // recovery::cbor_read_backup(storage::get_backup_data(env), env);
 
         self.pin_uv_auth_precheck(env, &pin_uv_auth_param, pin_uv_auth_protocol, channel)?;
 
@@ -958,7 +958,7 @@ impl<E: Env> CtapState<E> {
             let recovery_output = if recovery.is_some() {
                 let inputs = recovery.unwrap();
                 let recovery_output_result =
-                    recovery::process_recovery(inputs, env, rp_id.clone(), auth_data.clone());
+                    recovery::process_recovery(inputs, env, auth_data.clone());
                 if recovery_output_result.is_err() {
                     return Err(recovery_output_result.err().unwrap());
                 }
@@ -1066,7 +1066,8 @@ impl<E: Env> CtapState<E> {
         } = assertion_input;
 
         // Process extensions.
-        if extensions.hmac_secret.is_some() || extensions.cred_blob {
+        if extensions.hmac_secret.is_some() || extensions.cred_blob || extensions.recovery.is_some()
+        {
             let encrypted_output = if let Some(hmac_secret_input) = extensions.hmac_secret {
                 let cred_random =
                     self.generate_cred_random(env, &credential.private_key, has_uv)?;
@@ -1083,9 +1084,22 @@ impl<E: Env> CtapState<E> {
             } else {
                 None
             };
+            let recovery_output = if extensions.recovery.is_some() {
+                Some(
+                    recovery::process_recovery(
+                        extensions.recovery.unwrap(),
+                        env,
+                        auth_data.clone(),
+                    )
+                    .unwrap(),
+                )
+            } else {
+                None
+            };
             let extensions_output = cbor_map_options! {
                 "credBlob" => cred_blob,
                 "hmac-secret" => encrypted_output,
+                "recovery" => recovery_output
             };
             cbor_write(extensions_output, &mut auth_data)?;
         }

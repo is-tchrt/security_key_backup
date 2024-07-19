@@ -296,6 +296,7 @@ pub enum RecoveryExtensionAction {
 pub struct RecoveryExtensionInput {
     //Has all the inputs from the RP for the recovery extension.
     pub action: RecoveryExtensionAction,
+    pub rp_id: String,
     pub allow_list: Option<Vec<PublicKeyCredentialDescriptor>>,
 }
 
@@ -396,6 +397,7 @@ pub struct GetAssertionExtensions {
     pub hmac_secret: Option<GetAssertionHmacSecretInput>,
     pub cred_blob: bool,
     pub large_blob_key: Option<bool>,
+    pub recovery: Option<RecoveryExtensionInput>,
 }
 
 impl TryFrom<cbor::Value> for GetAssertionExtensions {
@@ -420,10 +422,12 @@ impl TryFrom<cbor::Value> for GetAssertionExtensions {
                 return Err(Ctap2StatusCode::CTAP2_ERR_INVALID_OPTION);
             }
         }
+        let recovery = None;
         Ok(Self {
             hmac_secret,
             cred_blob,
             large_blob_key,
+            recovery,
         })
     }
 }
@@ -1777,6 +1781,7 @@ mod test {
             hmac_secret: Some(expected_input),
             cred_blob: true,
             large_blob_key: Some(true),
+            recovery: None,
         };
         assert_eq!(extensions, Ok(expected_extensions));
     }
@@ -1805,6 +1810,7 @@ mod test {
             hmac_secret: Some(expected_input),
             cred_blob: true,
             large_blob_key: Some(true),
+            recovery: None,
         };
         assert_eq!(extensions, Ok(expected_extensions));
         // TODO more tests, check default

@@ -27,16 +27,20 @@ use super::storage::get_backup_data;
 pub fn process_recovery<E: Env>(
     inputs: RecoveryExtensionInput,
     env: &mut E,
-    rp_id: String,
     auth_data: Vec<u8>,
 ) -> Result<RecoveryExtensionOutput, Ctap2StatusCode> {
     let backup_data = cbor_read_backup(get_backup_data(env), env);
     if inputs.action == RecoveryExtensionAction::State {
         Ok(process_state_command(backup_data.recovery_state))
     } else if inputs.action == RecoveryExtensionAction::Generate {
-        Ok(process_generate_command(env, rp_id, backup_data))
+        Ok(process_generate_command(env, inputs.rp_id, backup_data))
     } else if inputs.action == RecoveryExtensionAction::Recover {
-        process_recover_command::<E>(inputs.allow_list.unwrap(), rp_id, auth_data, backup_data)
+        process_recover_command::<E>(
+            inputs.allow_list.unwrap(),
+            inputs.rp_id,
+            auth_data,
+            backup_data,
+        )
     } else {
         Err(Ctap2StatusCode::CTAP1_ERR_OTHER)
     }
