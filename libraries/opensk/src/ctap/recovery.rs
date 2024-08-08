@@ -6,22 +6,24 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt::Write;
 use crypto::backup;
-use crypto::ecdh::PubKey;
+use crypto::ecdh::{PubKey, SecKey};
+use persistent_store::StoreError;
 use sk_cbor::values::IntoCborValue;
 use sk_cbor::{cbor_map, destructure_cbor_map, Value};
 
-use crate::api::customization::AAGUID_LENGTH;
-use crate::api::key_store::KeyStore;
+use crate::api::customization::{Customization, AAGUID_LENGTH};
 use crate::api::private_key::PrivateKey;
 use crate::ctap::{cbor_read, cbor_write};
 use crate::env::Env;
 
 use super::data_formats::{
-    BackupData, PublicKeyCredentialDescriptor, RecoveryExtensionAction, RecoveryExtensionInput,
+    BackupData, PairingExtensionAction, PairingExtensionInput, PairingExtensionOutput,
+    PublicKeyCredentialDescriptor, RecoveryExtensionAction, RecoveryExtensionInput,
     RecoveryExtensionOutput,
 };
 use super::status_code::Ctap2StatusCode;
 use super::storage::get_backup_data;
+use super::storage::key::_RESERVED_CREDENTIALS;
 
 //Takes RecoveryExtensionInput, processes it and returns the appropriate output.
 pub fn process_recovery<E: Env>(
@@ -142,14 +144,17 @@ fn process_recover_command<E: Env>(
     auth_data: Vec<u8>,
     backup_data: BackupData,
 ) -> Result<RecoveryExtensionOutput, Ctap2StatusCode> {
-    let sec_key_bytes = backup_data.secret_key.to_bytes();
+    let mut sec_key_bytes: [u8; 32] = [08; 32];
+    backup_data.secret_key.to_bytes(&mut sec_key_bytes);
     let credential_ids = process_allow_credentials(allow_credentials);
-    if let Some((private_key, credential_id)) = get_credential_pair(
-        credential_ids,
-        rp_id,
-        sec_key_bytes.expose_secret_to_vec().try_into().unwrap(), //This is probably not super secure, so if someone wants to actually use this code they should fix it.
-    ) {
-        let sig = private_key.sign_and_encode::<E>(&auth_data).unwrap();
+    if let Some((secret_key, credential_id)) =
+        get_credential_pair(credential_ids, rp_id, sec_key_bytes)
+    {
+        let mut signing_key_bytes = [0u8; 32];
+        secret_key.to_bytes(&mut signing_key_bytes);
+        let signing_key = PrivateKey::new_ecdsa_from_bytes(&mut signing_key_bytes)
+            .expect("Couldn't get PrivatKey from bytes, recover.rs, process_recover_command");
+        let sig = signing_key.sign_and_encode::<E>(&auth_data).unwrap();
         let cred_id = make_full_cred_id(0, credential_id).to_vec();
         Ok(RecoveryExtensionOutput {
             action: RecoveryExtensionAction::Recover,
@@ -177,19 +182,19 @@ fn process_allow_credentials(
     credential_ids
 }
 
-//Gets the recovery credential_id and private key, formats the private_key as a PrivateKey, and returns them.
+//Gets the recovery credential_id and private key, formats the private_key as a SecKey, and returns them.
 fn get_credential_pair(
     credential_list: Vec<[u8; 81]>,
     rp_id: String,
     sec_key_bytes: [u8; 32],
-) -> Option<(PrivateKey, [u8; 81])> {
+) -> Option<(SecKey, [u8; 81])> {
     let credential_option = backup::confirm_cred_ids(credential_list, rp_id, sec_key_bytes);
     if credential_option.is_some() {
         let credential = credential_option.unwrap();
         let mut private_key_bytes = [0u8; 32];
         credential.0.to_bytes(&mut private_key_bytes);
-        // let private_key = SecKey::from_bytes(&private_key_bytes).unwrap();
-        let private_key = PrivateKey::new_ecdsa_from_bytes(&private_key_bytes).unwrap();
+        let private_key = SecKey::from_bytes(&private_key_bytes).unwrap();
+        // let private_key = PrivateKey::new_ecdsa_from_bytes(&private_key_bytes).unwrap();
         Some((private_key, credential.1))
     } else {
         None
@@ -197,16 +202,18 @@ fn get_credential_pair(
 }
 
 //Writes a BackupData struct to a Vec<u8> in cbor format.
-pub fn cbor_backups<E: Env>(backup_data: BackupData, env: &mut E) -> Vec<u8> {
+pub fn cbor_backups(backup_data: BackupData) -> Vec<u8> {
     // let mut public = [08; 65];
     // backup_data.public_key.to_bytes_uncompressed(&mut public);
     // let mut secret = [08; 32];
     // backup_data.secret_key.to_bytes(&mut secret);
-    let wrap_key = env.key_store().wrap_key::<E>().unwrap();
-    let secret = backup_data
-        .secret_key
-        .to_cbor::<E>(env.rng(), &wrap_key)
-        .unwrap();
+    // let wrap_key = env.key_store().wrap_key::<E>().unwrap();
+    let mut secret: [u8; 32] = [0u8; 32];
+    backup_data.secret_key.to_bytes(&mut secret);
+    // let secret = backup_data
+    //     .secret_key
+    //     .to_cbor::<E>(env.rng(), &wrap_key)
+    //     .unwrap();
     let recovery_seeds = cbor_write_recovery_seeds(backup_data.recovery_seeds);
     let cbor_value =
         cbor_map! {0x01 => secret, 0x02 => backup_data.recovery_state, 0x03 => recovery_seeds};
@@ -239,6 +246,12 @@ pub fn cbor_read_backup<E: Env>(data: Option<Vec<u8>>, env: &mut E) -> BackupDat
     )
     .unwrap();
     let secret_key_cbor = secret.unwrap();
+    let secret_key_bytes: [u8; 32] = secret_key_cbor
+        .extract_byte_string()
+        .expect("Couldn't get byte string from secret_key_cbor, recovery.rs, cbor_read_backup")
+        .as_slice()
+        .try_into()
+        .expect("Couldn't get byte string from secret_key_cbor, recovery.rs, cbor_read_backup");
     writeln!(env.write(), "Working after unwrapping secret").unwrap();
     let recovery_state = state.unwrap().extract_unsigned().unwrap();
     writeln!(env.write(), "Working after extracting state").unwrap();
@@ -246,11 +259,14 @@ pub fn cbor_read_backup<E: Env>(data: Option<Vec<u8>>, env: &mut E) -> BackupDat
     writeln!(env.write(), "Working after extracting array").unwrap();
     let recovery_seeds = cbor_read_recovery_seeds(recovey_seeds_cbor);
     writeln!(env.write(), "Working after read_recovery_seeds").unwrap();
-    let secret_key =
-        PrivateKey::from_cbor::<E>(&env.key_store().wrap_key::<E>().unwrap(), secret_key_cbor)
-            .unwrap();
+    let secret_key = SecKey::from_bytes(&secret_key_bytes)
+        .expect("Couldn't convert bytes to SecKey, recovery.rs, cbor_read_backup");
+    // let secret_key =
+    //     PrivateKey::from_cbor::<E>(&env.key_store().wrap_key::<E>().unwrap(), secret_key_cbor)
+    //         .unwrap();
     writeln!(env.write(), "Working after extracting secret_key").unwrap();
-    let public_key = secret_key.get_pub_key::<E>().unwrap();
+    let public_key = secret_key.genpk();
+    // let public_key = secret_key.get_pub_key::<E>().unwrap();
     // debug_ctap!(env, "Recovering backup public key: {:#?}", public_key);
     writeln!(
         env.write(),
@@ -319,4 +335,59 @@ pub fn cbor_read_recovery_seeds(value_list: Vec<Value>) -> Vec<(u8, [u8; AAGUID_
         seed_list.push(cbor_read_recovery_seed(value));
     }
     seed_list
+}
+
+//Store the BackupData for the key in the correct location
+pub fn cbor_store_backup<E: Env>(backup_data: BackupData, env: &mut E) -> Result<(), StoreError> {
+    let cbor_backup = cbor_backups(backup_data);
+    env.store()
+        .insert(_RESERVED_CREDENTIALS.start, &cbor_backup.as_slice())
+}
+
+//Process the pairing extension
+pub fn process_pairing<E: Env>(
+    inputs: PairingExtensionInput,
+    env: &mut E,
+) -> PairingExtensionOutput {
+    match inputs.action {
+        PairingExtensionAction::Import => PairingExtensionOutput {
+            success: import_recovery_seed(inputs.seed, env).is_ok(),
+            seed: None,
+        },
+        PairingExtensionAction::Export => PairingExtensionOutput {
+            success: true,
+            seed: Some(export_recovery_seed(env)),
+        },
+    }
+}
+
+//Process the export_recovery_seed command
+pub fn export_recovery_seed<E: Env>(env: &mut E) -> Value {
+    let backup_data = cbor_read_backup(get_backup_data(env), env);
+    let aaguid = env.customization().aaguid();
+    let seed = format_recovery_seed(backup_data, aaguid);
+    cbor_write_recovery_seed(seed)
+}
+
+//Takes in the BackupData and aaguid for this authenticator and formats the recovery_seed
+pub fn format_recovery_seed(
+    backup_data: BackupData,
+    aaguid: &[u8; AAGUID_LENGTH],
+) -> (u8, [u8; AAGUID_LENGTH], PubKey) {
+    (0, *aaguid, backup_data.public_key)
+}
+
+//Process the import_recovery_seed command
+pub fn import_recovery_seed<E: Env>(
+    cbor_seed_option: Option<Value>,
+    env: &mut E,
+) -> Result<(), StoreError> {
+    if let Some(cbor_seed) = cbor_seed_option {
+        let seed = cbor_read_recovery_seed(cbor_seed);
+        let mut backup_data = cbor_read_backup(get_backup_data(env), env);
+        backup_data.recovery_seeds.push(seed);
+        cbor_store_backup(backup_data, env)
+    } else {
+        Err(StoreError::StorageError)
+    }
 }

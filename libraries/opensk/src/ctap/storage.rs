@@ -68,7 +68,7 @@ pub fn make_backup_data<E: Env>(env: &mut E) {
     //     "Making backup public key: {:#?}",
     //     backup_data.public_key
     // );
-    let cbor_backup = cbor_backups(backup_data, env);
+    let cbor_backup = cbor_backups(backup_data);
     env.store()
         .insert(_RESERVED_CREDENTIALS.start, &cbor_backup.as_slice())
         .unwrap();

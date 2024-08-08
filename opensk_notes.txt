@@ -87,3 +87,23 @@ Added recovery processing on line 1087 of mod.rs
 There's an error right after that, and I'm not sure how to fix it. I might be able to use Option there, and just send in None to fix that error, because we might not do the recovery in that case, but I could be wrong.
 
 I think I'm going to make a change to the Yubico proposal so that rp_id gets passed in as part of RecoveryExtensionInput. Then I can remove some of the changes I just made and things should work a little better.
+
+Added SecKey to the ecdh use statement on line 27 of data_formats.rs and changed the data types in BackupData to SecKey and PubKey instead of PrivateKey and CoseKey on lines 325 and 326 of the same file. Hopefully that doesn't cause too many problems:)
+
+Added Value to sk_cbor use statement on line 31 of data_formats.rs, and added PairingExtensionAction, PairingExtensionInput and PairingExtensionOutput at or near line 347 of the same file.
+
+Added pub pairing: Option<PairingExtensionInput> on line 375 of data_formats.rs.
+
+Added let pairing = None on line 405 and pairing on line 413 of data_formats.rs. Once Webauthn is working we need to add those options in the cbor map section, but for now we just ignore them.
+
+Added pairing: None on line 1781 of data_formats.rs to make a test work.
+
+Added let pairing = extensions.pairing on line 882
+
+Added a whole bunch of stuff on line 883 to handle the pairing extension.
+
+Added AuthenticatorPairing(PairingExtensionOutput) on line 37 and PairingExtensionOutput on line 16 of response.rs so that I can return that from MakeCredential.
+
+Added ResponseData::AuthenticatorPairing(data) => data.into() on line 56 of the same file so we can encode the result as cbor
+
+Implemented from PairingExtensionOutput for cbor::Value on line 366 of data_formats.rs

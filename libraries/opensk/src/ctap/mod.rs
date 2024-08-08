@@ -879,6 +879,11 @@ impl<E: Env> CtapState<E> {
             None
         };
         let recovery = extensions.recovery;
+        let pairing = extensions.pairing;
+        if pairing.is_some() {
+            let pairing_data = recovery::process_pairing(pairing.unwrap(), env);
+            return Ok(ResponseData::AuthenticatorPairing(pairing_data));
+        };
         let has_extension_output = extensions.hmac_secret
             || extensions.cred_protect.is_some()
             || min_pin_length

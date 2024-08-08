@@ -24,11 +24,12 @@ use arbitrary::Arbitrary;
 use arrayref::array_ref;
 use core::convert::TryFrom;
 use core::fmt::Write;
-use crypto::ecdh::PubKey;
+use crypto::ecdh::{PubKey, SecKey};
 #[cfg(test)]
 use enum_iterator::IntoEnumIterator;
-use sk_cbor as cbor;
-use sk_cbor::{cbor_array_vec, cbor_map, cbor_map_options, destructure_cbor_map};
+use sk_cbor::{
+    self as cbor, cbor_array_vec, cbor_map, cbor_map_options, destructure_cbor_map, Value,
+};
 
 // Used as the identifier for ECDSA in assertion signatures and COSE.
 pub const ES256_ALGORITHM: i64 = -7;
@@ -304,9 +305,9 @@ pub struct RecoveryExtensionInput {
 pub struct RecoveryExtensionOutput {
     pub action: RecoveryExtensionAction,
     pub state: u64,
-    pub creds: Option<Vec<cbor::Value>>, //Each array is an attestedCredData byte array, which I think is 177 bytes, but I could be completely wrong.
+    pub creds: Option<Vec<cbor::Value>>,
     pub cred_id: Option<Vec<u8>>,
-    pub sig: Option<Vec<u8>>, //The length here is a complete guess and is just there so that I can derive Clone, which I might need. We might need to remove the length later.
+    pub sig: Option<Vec<u8>>,
 }
 
 impl From<RecoveryExtensionOutput> for cbor::Value {
@@ -322,22 +323,51 @@ impl From<RecoveryExtensionOutput> for cbor::Value {
 }
 
 pub struct BackupData {
-    pub secret_key: PrivateKey,
-    pub public_key: CoseKey,
+    pub secret_key: SecKey,
+    pub public_key: PubKey,
     pub recovery_state: u64,
     pub recovery_seeds: Vec<(u8, [u8; AAGUID_LENGTH], PubKey)>,
 }
 
 impl BackupData {
     pub fn init<E: Env>(env: &mut E) -> BackupData {
-        let secret_key = PrivateKey::new(env, SignatureAlgorithm::Es256);
+        // let secret_key = PrivateKey::new(env, SignatureAlgorithm::Es256);
+        let secret_key = SecKey::gensk(env.rng());
         writeln!(env.write(), "secret key: {:?}", secret_key).unwrap();
-        let public_key = secret_key.get_pub_key::<E>().unwrap();
+        let public_key = secret_key.genpk();
         BackupData {
             public_key,
             secret_key,
             recovery_state: 0,
             recovery_seeds: Vec::new(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum PairingExtensionAction {
+    #[default]
+    Import,
+    Export,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PairingExtensionInput {
+    pub action: PairingExtensionAction,
+    pub seed: Option<Value>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PairingExtensionOutput {
+    pub success: bool,
+    pub seed: Option<Value>,
+}
+
+impl From<PairingExtensionOutput> for cbor::Value {
+    fn from(output: PairingExtensionOutput) -> Self {
+        cbor_map_options! {
+            "seed" => output.seed,
+            "success" => output.success,
         }
     }
 }
@@ -351,6 +381,7 @@ pub struct MakeCredentialExtensions {
     pub cred_blob: Option<Vec<u8>>,
     pub large_blob_key: Option<bool>,
     pub recovery: Option<RecoveryExtensionInput>,
+    pub pairing: Option<PairingExtensionInput>,
 }
 
 impl TryFrom<cbor::Value> for MakeCredentialExtensions {
@@ -380,6 +411,7 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
             }
         }
         let recovery = None;
+        let pairing = None;
         Ok(Self {
             hmac_secret,
             cred_protect,
@@ -387,6 +419,7 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
             cred_blob,
             large_blob_key,
             recovery,
+            pairing,
         })
     }
 }
@@ -1754,6 +1787,7 @@ mod test {
             cred_blob: Some(vec![0xCB]),
             large_blob_key: Some(true),
             recovery: None,
+            pairing: None,
         };
         assert_eq!(extensions, Ok(expected_extensions));
     }

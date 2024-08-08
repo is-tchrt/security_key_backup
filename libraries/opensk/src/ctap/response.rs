@@ -14,8 +14,8 @@
 
 use super::data_formats::{
     AuthenticatorTransport, CoseKey, CredentialProtectionPolicy, PackedAttestationStatement,
-    PublicKeyCredentialDescriptor, PublicKeyCredentialParameter, PublicKeyCredentialRpEntity,
-    PublicKeyCredentialUserEntity,
+    PairingExtensionOutput, PublicKeyCredentialDescriptor, PublicKeyCredentialParameter,
+    PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity,
 };
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -36,6 +36,7 @@ pub enum ResponseData {
     AuthenticatorCredentialManagement(Option<AuthenticatorCredentialManagementResponse>),
     AuthenticatorSelection,
     AuthenticatorLargeBlobs(Option<AuthenticatorLargeBlobsResponse>),
+    AuthenticatorPairing(PairingExtensionOutput),
     #[cfg(feature = "config_command")]
     AuthenticatorConfig,
 }
@@ -52,6 +53,7 @@ impl From<ResponseData> for Option<cbor::Value> {
             ResponseData::AuthenticatorCredentialManagement(data) => data.map(|d| d.into()),
             ResponseData::AuthenticatorSelection => None,
             ResponseData::AuthenticatorLargeBlobs(data) => data.map(|d| d.into()),
+            ResponseData::AuthenticatorPairing(data) => Some(data.into()),
             #[cfg(feature = "config_command")]
             ResponseData::AuthenticatorConfig => None,
         }
