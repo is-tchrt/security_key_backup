@@ -79,7 +79,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use byteorder::{BigEndian, ByteOrder};
 use core::convert::TryFrom;
-// use core::fmt::Write;
+use core::fmt::Write;
 // use data_formats::BackupData;
 use rand_core::RngCore;
 // use recovery::cbor_backups;
@@ -879,6 +879,7 @@ impl<E: Env> CtapState<E> {
             None
         };
         let recovery = extensions.recovery;
+        writeln!(env.write(), "Testing").unwrap();
         let pairing = extensions.pairing;
         if pairing.is_some() {
             let pairing_data = recovery::process_pairing(pairing.unwrap(), env);
@@ -962,6 +963,7 @@ impl<E: Env> CtapState<E> {
             let cred_protect_output = extensions.cred_protect.and(cred_protect_policy);
             let recovery_output = if recovery.is_some() {
                 let inputs = recovery.unwrap();
+                writeln!(env.write(), "Recovery inputs: {:?}", inputs).unwrap();
                 let recovery_output_result =
                     recovery::process_recovery(inputs, env, auth_data.clone());
                 if recovery_output_result.is_err() {
