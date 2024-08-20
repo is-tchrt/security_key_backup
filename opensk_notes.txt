@@ -107,5 +107,3 @@ Added AuthenticatorPairing(PairingExtensionOutput) on line 37 and PairingExtensi
 Added ResponseData::AuthenticatorPairing(data) => data.into() on line 56 of the same file so we can encode the result as cbor
 
 Implemented from PairingExtensionOutput for cbor::Value on line 366 of data_formats.rs
-
-Added a writeln! on line 971 of mod.rs to see if the extension is receiving input properly.

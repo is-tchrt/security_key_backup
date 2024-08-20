@@ -31,6 +31,7 @@ pub fn process_recovery<E: Env>(
     env: &mut E,
     auth_data: Vec<u8>,
 ) -> Result<RecoveryExtensionOutput, Ctap2StatusCode> {
+    writeln!(env.write(), "Processing extension... {:?}", inputs).unwrap();
     let backup_data = cbor_read_backup(get_backup_data(env), env);
     if inputs.action == RecoveryExtensionAction::State {
         Ok(process_state_command(backup_data.recovery_state))

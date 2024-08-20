@@ -962,17 +962,11 @@ impl<E: Env> CtapState<E> {
             let cred_protect_output = extensions.cred_protect.and(cred_protect_policy);
             let recovery_output = if recovery.is_some() {
                 let inputs = recovery.unwrap();
-                writeln!(env.write(), "Recovery input: {:?}", inputs);
                 let recovery_output_result =
                     recovery::process_recovery(inputs, env, auth_data.clone());
                 if recovery_output_result.is_err() {
                     return Err(recovery_output_result.err().unwrap());
                 }
-                writeln!(
-                    env.write(),
-                    "Recovery output: {:?}",
-                    recovery_output_result.unwrap()
-                );
                 Some(recovery_output_result.unwrap())
             } else {
                 None
