@@ -880,7 +880,7 @@ impl<E: Env> CtapState<E> {
             None
         };
         let recovery = extensions.recovery;
-        writeln!(env.write(), "Testing: {:?}", recovery).unwrap();
+        // writeln!(env.write(), "Testing: {:?}", recovery).unwrap();
         let pairing = extensions.pairing;
         if pairing.is_some() {
             let pairing_data = recovery::process_pairing(pairing.unwrap(), env);
@@ -964,7 +964,7 @@ impl<E: Env> CtapState<E> {
             let cred_protect_output = extensions.cred_protect.and(cred_protect_policy);
             let recovery_output = if recovery.is_some() {
                 let inputs = recovery.unwrap();
-                writeln!(env.write(), "Recovery inputs: {:?}", inputs).unwrap();
+                // writeln!(env.write(), "Recovery inputs: {:?}", inputs).unwrap();
                 let recovery_output_result =
                     recovery::process_recovery(inputs, env, auth_data.clone());
                 if recovery_output_result.is_err() {
