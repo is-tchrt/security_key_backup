@@ -79,7 +79,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use byteorder::{BigEndian, ByteOrder};
 use core::convert::TryFrom;
-// use core::fmt::Write;
+use core::fmt::Write;
 // use data_formats::BackupData;
 use rand_core::RngCore;
 // use recovery::cbor_backups;
@@ -744,7 +744,7 @@ impl<E: Env> CtapState<E> {
             pin_uv_auth_protocol,
             enterprise_attestation,
         } = make_credential_params;
-        // writeln!(env.write(), "Parameters: {:?}", extensions).unwrap();
+        writeln!(env.write(), "Parameters: {:?}", extensions).unwrap();
 
         // let backup_data = BackupData::init(env);
         // writeln!(
