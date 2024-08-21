@@ -108,6 +108,8 @@ Added ResponseData::AuthenticatorPairing(data) => data.into() on line 56 of the 
 
 Implemented from PairingExtensionOutput for cbor::Value on line 366 of data_formats.rs
 
-Added a print statement on line 882 and line 966 of mod.rs.
+Added a print statement on line 882 and line 967 of mod.rs.
 
 Added a print statement on line 747 of mod.rs.
+
+Moved the line on 747 to 861.

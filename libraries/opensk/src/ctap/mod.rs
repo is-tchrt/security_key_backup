@@ -744,7 +744,6 @@ impl<E: Env> CtapState<E> {
             pin_uv_auth_protocol,
             enterprise_attestation,
         } = make_credential_params;
-        writeln!(env.write(), "Parameters: {:?}", extensions).unwrap();
 
         // let backup_data = BackupData::init(env);
         // writeln!(
@@ -859,6 +858,7 @@ impl<E: Env> CtapState<E> {
 
         check_user_presence(env, channel)?;
         self.client_pin.clear_token_flags();
+        writeln!(env.write(), "Parameters: {:?}", extensions).unwrap();
 
         let default_cred_protect = env.customization().default_cred_protect();
         let mut cred_protect_policy = extensions.cred_protect;
