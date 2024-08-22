@@ -113,3 +113,11 @@ Added a print statement on line 882 and line 967 of mod.rs.
 Added a print statement on line 747 of mod.rs.
 
 Moved the line on 747 to 861.
+
+Added "recovery" => recovery to line 398 of data_formats.rs.
+
+Impl TryFrom cbor value for RecoveryExtensionInput on line 319 of data_formats.rs.
+
+Impl TryFrom cbor value for RecoveryExtensionAction on line 296 of data_formats.rs.
+
+Added let recovery = recovery.map(RecoveryExtensionAction::try_from).tranpose()?; on line 461 of data_formats.rs.

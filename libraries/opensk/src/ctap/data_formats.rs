@@ -293,12 +293,59 @@ pub enum RecoveryExtensionAction {
     Recover,
 }
 
+impl TryFrom<cbor::Value> for RecoveryExtensionAction {
+    type Error = Ctap2StatusCode;
+
+    fn try_from(cbor_value: cbor::Value) -> Result<Self, Self::Error> {
+        let action_option = cbor_value.extract_text_string();
+        match action_option {
+            Some(action) => match action {
+                String::from("state") => Ok(RecoveryExtensionAction::State),
+                String::from("generate") => Ok(RecoveryExtensionAction::Generate),
+                String::from("recover") => Ok(RecoveryExtensionAction::Recover),
+                _ => Ctap2StatusCode::CTAP1_ERR_INVALID_COMMAND,
+            },
+            None => Ctap2StatusCode::CTAP1_ERR_INVALID_PARAMETER,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RecoveryExtensionInput {
     //Has all the inputs from the RP for the recovery extension.
     pub action: RecoveryExtensionAction,
     pub rp_id: String,
     pub allow_list: Option<Vec<PublicKeyCredentialDescriptor>>,
+}
+
+impl TryFrom<cbor::Value> for RecoveryExtensionInput {
+    type Error = Ctap2StatusCode;
+
+    fn try_from(cbor_value: cbor::Value) -> Result<Self, Ctap2StatusCode> {
+        destructure_cbor_map! {
+            let {
+            "action" => action,
+            "allow-list" => allow_list,
+            "rp-id" => rp_id,
+            } = extract_map(cbor_value)?;
+        }
+
+        let action = action.map(RecoveryExtensionAction::try_from).transpose()?;
+        let allow_list = allow_list.map(extract_array).transpose()?;
+        if allow_list.is_some() {
+            let mut new_allow_list = Vec::<PublicKeyCredentialDescriptor>::new();
+            for value in allow_list {
+                new_allow_list.push(PublicKeyCredentialDescriptor::try_from(value)?);
+                let allow_list = new_allow_list;
+            }
+        }
+        let rp_id = rp_id.map(extract_text_string).transpose()?;
+        Ok(Self {
+            action,
+            rp_id,
+            allow_list,
+        })
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -395,6 +442,7 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
                 "hmac-secret" => hmac_secret,
                 "largeBlobKey" => large_blob_key,
                 "minPinLength" => min_pin_length,
+                "recovery" => recovery,
             } = extract_map(cbor_value)?;
         }
 
@@ -410,7 +458,7 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
                 return Err(Ctap2StatusCode::CTAP2_ERR_INVALID_OPTION);
             }
         }
-        let recovery = None;
+        let recovery = recovery.map(RecoveryExtensionAction::try_from).tranpose()?;
         let pairing = None;
         Ok(Self {
             hmac_secret,
