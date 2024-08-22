@@ -593,7 +593,7 @@ impl<E: Env> CtapState<E> {
         channel: Channel,
     ) -> Vec<u8> {
         if let Some(response) = env.process_vendor_command(command_cbor, channel) {
-            writeln!(env.write(), "Took the process_vendor_command route.");
+            writeln!(env.write(), "Took the process_vendor_command route.").unwrap();
             self.clear_other_channels(channel);
             self.stateful_command_permission.clear();
             return response;
