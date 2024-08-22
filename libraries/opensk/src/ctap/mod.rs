@@ -593,7 +593,6 @@ impl<E: Env> CtapState<E> {
         channel: Channel,
     ) -> Vec<u8> {
         if let Some(response) = env.process_vendor_command(command_cbor, channel) {
-            writeln!(env.write(), "Took the process_vendor_command route.").unwrap();
             self.clear_other_channels(channel);
             self.stateful_command_permission.clear();
             return response;
@@ -964,6 +963,7 @@ impl<E: Env> CtapState<E> {
             };
             let cred_protect_output = extensions.cred_protect.and(cred_protect_policy);
             let recovery_output = if recovery.is_some() {
+                writeln!(env.write(), "Registered a need for extension processing").unwrap();
                 let inputs = recovery.unwrap();
                 // writeln!(env.write(), "Recovery inputs: {:?}", inputs).unwrap();
                 let recovery_output_result =
