@@ -880,7 +880,7 @@ impl<E: Env> CtapState<E> {
             None
         };
         let recovery = extensions.recovery;
-        writeln!(env.write(), "Testing: {:?}", cred_protect_policy).unwrap();
+        writeln!(env.write(), "Testing: {:?}", recovery).expect("Printing didn't work quite right");
         let pairing = extensions.pairing;
         if pairing.is_some() {
             let pairing_data = recovery::process_pairing(pairing.unwrap(), env);
