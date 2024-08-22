@@ -334,6 +334,7 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
             .map(RecoveryExtensionAction::try_from)
             .transpose()?
             .unwrap();
+        let rp_id = rp_id.map(extract_text_string).transpose()?.unwrap();
         let allow_list_option = allow_list_cbor.map(extract_array).transpose()?;
         if allow_list_option.is_some() {
             let old_allow_list = allow_list_option.unwrap();
@@ -342,15 +343,19 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
                 allow_list.push(PublicKeyCredentialDescriptor::try_from(value).unwrap());
             }
             let allow_list = Some(allow_list);
+            Ok(Self {
+                action,
+                rp_id,
+                allow_list,
+            })
         } else {
             let allow_list: Option<Vec<PublicKeyCredentialDescriptor>> = None;
+            Ok(Self {
+                action,
+                rp_id,
+                allow_list,
+            })
         }
-        let rp_id = rp_id.map(extract_text_string).transpose()?.unwrap();
-        Ok(Self {
-            action,
-            rp_id,
-            allow_list,
-        })
     }
 }
 
@@ -464,9 +469,7 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
                 return Err(Ctap2StatusCode::CTAP2_ERR_INVALID_OPTION);
             }
         }
-        let recovery = recovery
-            .map(RecoveryExtensionAction::try_from)
-            .transpose()?;
+        let recovery = recovery.map(RecoveryExtensionInput::try_from).transpose()?;
         let pairing = None;
         Ok(Self {
             hmac_secret,
