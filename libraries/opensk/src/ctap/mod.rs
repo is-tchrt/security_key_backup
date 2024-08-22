@@ -79,7 +79,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use byteorder::{BigEndian, ByteOrder};
 use core::convert::TryFrom;
-use core::fmt::Write;
+// use core::fmt::Write;
 // use data_formats::BackupData;
 use rand_core::RngCore;
 // use recovery::cbor_backups;
@@ -598,7 +598,6 @@ impl<E: Env> CtapState<E> {
             return response;
         }
         let cmd = Command::deserialize(command_cbor);
-        writeln!(env.write(), "Received command: {:#?}", cmd).unwrap();
         debug_ctap!(env, "Received command: {:#?}", cmd);
         let response = cmd.and_then(|command| self.process_parsed_command(env, command, channel));
         debug_ctap!(env, "Sending response: {:#?}", response);
@@ -881,7 +880,7 @@ impl<E: Env> CtapState<E> {
             None
         };
         let recovery = extensions.recovery;
-        writeln!(env.write(), "Testing: {:?}", recovery).expect("Printing didn't work quite right");
+        // writeln!(env.write(), "Testing: {:?}", recovery).expect("Printing didn't work quite right");
         let pairing = extensions.pairing;
         if pairing.is_some() {
             let pairing_data = recovery::process_pairing(pairing.unwrap(), env);
