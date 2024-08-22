@@ -79,7 +79,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use byteorder::{BigEndian, ByteOrder};
 use core::convert::TryFrom;
-use core::fmt::Write;
+// use core::fmt::Write;
 // use data_formats::BackupData;
 use rand_core::RngCore;
 // use recovery::cbor_backups;
@@ -880,7 +880,7 @@ impl<E: Env> CtapState<E> {
             None
         };
         let recovery = extensions.recovery;
-        writeln!(env.write(), "Testing: {:?}", recovery).unwrap();
+        // writeln!(env.write(), "Testing: {:?}", recovery).unwrap();
         let pairing = extensions.pairing;
         if pairing.is_some() {
             let pairing_data = recovery::process_pairing(pairing.unwrap(), env);
