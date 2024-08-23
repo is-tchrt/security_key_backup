@@ -744,6 +744,7 @@ impl<E: Env> CtapState<E> {
             pin_uv_auth_protocol,
             enterprise_attestation,
         } = make_credential_params;
+        writeln!(env.write(), "minPinLength: {:?}", extensions.min_pin_length).unwrap();
 
         // let backup_data = BackupData::init(env);
         // writeln!(
@@ -963,7 +964,6 @@ impl<E: Env> CtapState<E> {
             };
             let cred_protect_output = extensions.cred_protect.and(cred_protect_policy);
             let recovery_output = if recovery.is_some() {
-                writeln!(env.write(), "Registered a need for extension processing").unwrap();
                 let inputs = recovery.unwrap();
                 // writeln!(env.write(), "Recovery inputs: {:?}", inputs).unwrap();
                 let recovery_output_result =
