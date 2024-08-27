@@ -597,6 +597,7 @@ impl<E: Env> CtapState<E> {
             self.stateful_command_permission.clear();
             return response;
         }
+        writeln!(env.write(), "CBOR: ", command_cbor).unwrap();
         let cmd = Command::deserialize(command_cbor);
         debug_ctap!(env, "Received command: {:#?}", cmd);
         let response = cmd.and_then(|command| self.process_parsed_command(env, command, channel));
@@ -744,7 +745,7 @@ impl<E: Env> CtapState<E> {
             pin_uv_auth_protocol,
             enterprise_attestation,
         } = make_credential_params;
-        writeln!(env.write(), "Recovery: {:?}", None::<bool>).unwrap();
+        // writeln!(env.write(), "Recovery: {:?}", None::<bool>).unwrap();
 
         // let backup_data = BackupData::init(env);
         // writeln!(
