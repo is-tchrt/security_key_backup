@@ -744,7 +744,7 @@ impl<E: Env> CtapState<E> {
             pin_uv_auth_protocol,
             enterprise_attestation,
         } = make_credential_params;
-        writeln!(env.write(), "minPinLength: {:?}", extensions.min_pin_length).unwrap();
+        writeln!(env.write(), "Recovery: {:?}", extensions.recovery).unwrap();
 
         // let backup_data = BackupData::init(env);
         // writeln!(
