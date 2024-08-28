@@ -597,7 +597,7 @@ impl<E: Env> CtapState<E> {
             self.stateful_command_permission.clear();
             return response;
         }
-        writeln!(env.write(), "CBOR: ", command_cbor).unwrap();
+        writeln!(env.write(), "CBOR: {:?}", command_cbor).unwrap();
         let cmd = Command::deserialize(command_cbor);
         debug_ctap!(env, "Received command: {:#?}", cmd);
         let response = cmd.and_then(|command| self.process_parsed_command(env, command, channel));
