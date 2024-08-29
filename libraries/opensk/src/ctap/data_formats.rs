@@ -471,11 +471,11 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
         }
         let fake_rp_id = "recovery wasn't there".to_string();
         let recovery = recovery.map_or(
-            RecoveryExtensionInput {
+            Ok(RecoveryExtensionInput {
                 action: RecoveryExtensionAction::State,
                 rp_id: fake_rp_id,
                 allow_list: None,
-            },
+            }),
             RecoveryExtensionInput::try_from,
         )?;
         let pairing = None;
