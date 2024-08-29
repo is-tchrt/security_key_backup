@@ -17,7 +17,7 @@ use crate::api::crypto::{ecdh, ecdsa, EC_FIELD_SIZE};
 use crate::api::customization::AAGUID_LENGTH;
 use crate::api::private_key::PrivateKey;
 use crate::env::{AesKey, Env};
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 #[cfg(feature = "fuzz")]
 use arbitrary::Arbitrary;
@@ -469,7 +469,15 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
                 return Err(Ctap2StatusCode::CTAP2_ERR_INVALID_OPTION);
             }
         }
-        let recovery = recovery.map(RecoveryExtensionInput::try_from).transpose()?;
+        let fake_rp_id = "recovery wasn't there".to_string();
+        let recovery = recovery.map_or(
+            RecoveryExtensionInput {
+                action: RecoveryExtensionAction::State,
+                rp_id: fake_rp_id,
+                allow_list: None,
+            },
+            RecoveryExtensionInput::try_from,
+        )?;
         let pairing = None;
         Ok(Self {
             hmac_secret,
