@@ -356,6 +356,7 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
         //         allow_list,
         //     })
         // }
+        let _value = cbor_value;
         let rp_id = "Recovery was there".to_string();
         Ok(Self {
             action: RecoveryExtensionAction::State,
