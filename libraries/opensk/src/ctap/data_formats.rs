@@ -409,7 +409,7 @@ pub enum PairingExtensionAction {
     Export,
 }
 
-impl TryFrom<cbor::Value> for PairingExtensionInput {
+impl TryFrom<cbor::Value> for PairingExtensionAction {
     type Error = Ctap2StatusCode;
 
     fn try_from(cbor_value: cbor::Value) -> Result<Self, Ctap2StatusCode> {
