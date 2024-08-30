@@ -51,7 +51,8 @@ pub fn process_recovery<E: Env>(
 //Retrieves the state and returns a RecoveryExtensionOutput struct with the appropriate information.
 fn process_state_command(state: u64) -> RecoveryExtensionOutput {
     RecoveryExtensionOutput {
-        action: RecoveryExtensionAction::State,
+        // action: RecoveryExtensionAction::State,
+        action: RecoveryExtensionAction::Generate,
         state,
         creds: None,
         cred_id: None,
