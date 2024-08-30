@@ -330,24 +330,11 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
             } = extract_map(cbor_value)?;
         }
 
-        // let _rp_id = rp_id;
-        // let _action = action;
-        // let _allow_list = allow_list_cbor;
-        // let fake_rp = "action worked".to_string();
-
         let action = action
             .map(RecoveryExtensionAction::try_from)
             .transpose()?
             .unwrap();
-
         let rp_id = rp_id.map(extract_text_string).transpose()?.unwrap();
-
-        // Ok(Self {
-        //     // action: RecoveryExtensionAction::State,
-        //     action,
-        //     rp_id,
-        //     allow_list: None,
-        // })
         let allow_list_option = allow_list_cbor.map(extract_array).transpose()?;
         if allow_list_option.is_some() {
             let old_allow_list = allow_list_option.unwrap();
@@ -483,15 +470,6 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
             }
         }
         let recovery = recovery.map(RecoveryExtensionInput::try_from).transpose()?;
-        // let fake_rp_id = "recovery wasn't there".to_string();
-        // let recovery = Some(recovery.map_or(
-        //     Ok(RecoveryExtensionInput {
-        //         action: RecoveryExtensionAction::State,
-        //         rp_id: fake_rp_id,
-        //         allow_list: None,
-        //     }),
-        //     RecoveryExtensionInput::try_from,
-        // )?);
         let pairing = None;
         Ok(Self {
             hmac_secret,
