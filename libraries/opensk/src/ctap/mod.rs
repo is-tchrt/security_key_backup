@@ -893,7 +893,6 @@ impl<E: Env> CtapState<E> {
             || has_cred_blob_output
             || recovery.is_some();
         if has_extension_output {
-            writeln!(env.write(), "Registered extension output!").unwrap();
             flags |= ED_FLAG
         };
         let large_blob_key = match (options.rk, extensions.large_blob_key) {
@@ -972,12 +971,6 @@ impl<E: Env> CtapState<E> {
                 if recovery_output_result.is_err() {
                     return Err(recovery_output_result.err().unwrap());
                 }
-                writeln!(
-                    env.write(),
-                    "Results: {:?}",
-                    recovery_output_result.as_ref().unwrap()
-                )
-                .unwrap();
                 Some(recovery_output_result.unwrap())
             } else {
                 None

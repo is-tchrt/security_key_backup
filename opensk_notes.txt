@@ -123,5 +123,3 @@ Impl TryFrom cbor value for RecoveryExtensionAction on line 296 of data_formats.
 Added let recovery = recovery.map(RecoveryExtensionAction::try_from).tranpose()?; on line 461 of data_formats.rs.
 
 Added a print statement on line 600 of mod.rs
-
-Added a print statement on line 896 of mod.rs and one on line 975
