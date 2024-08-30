@@ -332,7 +332,7 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
 
         let _rp_id = rp_id;
         // let _action = action;
-        let _allow_list = allow_list_cbor;
+        // let _allow_list = allow_list_cbor;
         let fake_rp = "allow_list worked".to_string();
 
         let action = action
@@ -354,7 +354,7 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
                 // action: RecoveryExtensionAction::State,
                 action,
                 rp_id: fake_rp,
-                allow_list: None,
+                allow_list,
             })
             // Ok(Self {
             //     action,
@@ -367,7 +367,7 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
                 // action: RecoveryExtensionAction::State,
                 action,
                 rp_id: fake_rp,
-                allow_list: None,
+                allow_list,
             })
             // Ok(Self {
             //     action,
