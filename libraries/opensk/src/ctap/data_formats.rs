@@ -469,15 +469,18 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
                 return Err(Ctap2StatusCode::CTAP2_ERR_INVALID_OPTION);
             }
         }
-        let fake_rp_id = "recovery wasn't there".to_string();
-        let recovery = Some(recovery.map_or(
-            Ok(RecoveryExtensionInput {
-                action: RecoveryExtensionAction::State,
-                rp_id: fake_rp_id,
-                allow_list: None,
-            }),
-            RecoveryExtensionInput::try_from,
-        )?);
+        let recovery = recovery
+            .map(RecoveryExtensionAction::try_from)
+            .transpose()?;
+        // let fake_rp_id = "recovery wasn't there".to_string();
+        // let recovery = Some(recovery.map_or(
+        //     Ok(RecoveryExtensionInput {
+        //         action: RecoveryExtensionAction::State,
+        //         rp_id: fake_rp_id,
+        //         allow_list: None,
+        //     }),
+        //     RecoveryExtensionInput::try_from,
+        // )?);
         let pairing = None;
         Ok(Self {
             hmac_secret,
