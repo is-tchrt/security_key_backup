@@ -975,7 +975,7 @@ impl<E: Env> CtapState<E> {
                 writeln!(
                     env.write(),
                     "Results: {:?}",
-                    recovery_output_result.unwrap()
+                    recovery_output_result.as_ref().unwrap()
                 )
                 .unwrap();
                 Some(recovery_output_result.unwrap())
