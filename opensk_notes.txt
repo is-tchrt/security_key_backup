@@ -123,3 +123,12 @@ Impl TryFrom cbor value for RecoveryExtensionAction on line 296 of data_formats.
 Added let recovery = recovery.map(RecoveryExtensionAction::try_from).tranpose()?; on line 461 of data_formats.rs.
 
 Added a print statement on line 600 of mod.rs
+
+Added "pairing" => pairing, on line 451 of data_formats.rs
+
+Added let pairing = pairing.map(PairingExtensionInput::try_from).transpose()?; on line 474 of data_formats.rs
+
+Added impl try_from<cbor::Value> for PairingExtensionInput etc. on line 418 of mod.rs
+
+Added impl try_from<cbor::Value> for PairingExtensionAction etc. on line 412 of mod.rs
+

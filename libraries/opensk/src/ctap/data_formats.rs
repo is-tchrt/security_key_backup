@@ -409,10 +409,44 @@ pub enum PairingExtensionAction {
     Export,
 }
 
+impl TryFrom<cbor::Value> for PairingExtensionInput {
+    type Error = Ctap2StatusCode;
+
+    fn try_from(cbor_value: cbor::Value) -> Result<Self, Ctap2StatusCode> {
+        let action_option = cbor_value.extract_text_string();
+        match action_option {
+            Some(action) => match action.as_str() {
+                "import" => Ok(PairingExtensionAction::Import),
+                "export" => Ok(PairingExtensionAction::Export),
+                _ => Err(Ctap2StatusCode::CTAP1_ERR_INVALID_COMMAND),
+            },
+            None => Err(Ctap2StatusCode::CTAP1_ERR_INVALID_PARAMETER),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PairingExtensionInput {
     pub action: PairingExtensionAction,
     pub seed: Option<Value>,
+}
+
+impl TryFrom<cbor::Value> for PairingExtensionInput {
+    type Error = Ctap2StatusCode;
+
+    fn try_from(cbor_value: cbor::Value) -> Result<Self, Ctap2StatusCode> {
+        destructure_cbor_map! {
+            let {
+            "seed" => seed,
+            "action" => action,
+            } = extract_map(cbor_value)?;
+        }
+        let action = action
+            .map(PairingExtensionAction::try_from)
+            .transpose()?
+            .unwrap();
+        Ok(Self { action, seed })
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -448,6 +482,7 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
     fn try_from(cbor_value: cbor::Value) -> Result<Self, Ctap2StatusCode> {
         destructure_cbor_map! {
             let {
+                "pairing" => pairing,
                 "credBlob" => cred_blob,
                 "recovery" => recovery,
                 "credProtect" => cred_protect,
@@ -470,7 +505,7 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
             }
         }
         let recovery = recovery.map(RecoveryExtensionInput::try_from).transpose()?;
-        let pairing = None;
+        let pairing = pairing.map(PairingExtensionInput::try_from).transpose()?;
         Ok(Self {
             hmac_secret,
             cred_protect,
