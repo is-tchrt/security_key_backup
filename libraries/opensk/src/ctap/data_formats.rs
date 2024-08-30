@@ -322,47 +322,40 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
     type Error = Ctap2StatusCode;
 
     fn try_from(cbor_value: cbor::Value) -> Result<Self, Ctap2StatusCode> {
-        // destructure_cbor_map! {
-        //     let {
-        //     "action" => action,
-        //     "allow-list" => allow_list_cbor,
-        //     "rp-id" => rp_id,
-        //     } = extract_map(cbor_value)?;
-        // }
+        destructure_cbor_map! {
+            let {
+            "action" => action,
+            "allow-list" => allow_list_cbor,
+            "rp-id" => rp_id,
+            } = extract_map(cbor_value)?;
+        }
 
-        // let action = action
-        //     .map(RecoveryExtensionAction::try_from)
-        //     .transpose()?
-        //     .unwrap();
-        // let rp_id = rp_id.map(extract_text_string).transpose()?.unwrap();
-        // let allow_list_option = allow_list_cbor.map(extract_array).transpose()?;
-        // if allow_list_option.is_some() {
-        //     let old_allow_list = allow_list_option.unwrap();
-        //     let mut allow_list = Vec::<PublicKeyCredentialDescriptor>::new();
-        //     for value in old_allow_list {
-        //         allow_list.push(PublicKeyCredentialDescriptor::try_from(value).unwrap());
-        //     }
-        //     let allow_list = Some(allow_list);
-        //     Ok(Self {
-        //         action,
-        //         rp_id,
-        //         allow_list,
-        //     })
-        // } else {
-        //     let allow_list: Option<Vec<PublicKeyCredentialDescriptor>> = None;
-        //     Ok(Self {
-        //         action,
-        //         rp_id,
-        //         allow_list,
-        //     })
-        // }
-        let _value = cbor_value;
-        let rp_id = "Recovery was there".to_string();
-        Ok(Self {
-            action: RecoveryExtensionAction::State,
-            rp_id,
-            allow_list: None,
-        })
+        let action = action
+            .map(RecoveryExtensionAction::try_from)
+            .transpose()?
+            .unwrap();
+        let rp_id = rp_id.map(extract_text_string).transpose()?.unwrap();
+        let allow_list_option = allow_list_cbor.map(extract_array).transpose()?;
+        if allow_list_option.is_some() {
+            let old_allow_list = allow_list_option.unwrap();
+            let mut allow_list = Vec::<PublicKeyCredentialDescriptor>::new();
+            for value in old_allow_list {
+                allow_list.push(PublicKeyCredentialDescriptor::try_from(value).unwrap());
+            }
+            let allow_list = Some(allow_list);
+            Ok(Self {
+                action,
+                rp_id,
+                allow_list,
+            })
+        } else {
+            let allow_list: Option<Vec<PublicKeyCredentialDescriptor>> = None;
+            Ok(Self {
+                action,
+                rp_id,
+                allow_list,
+            })
+        }
     }
 }
 
@@ -456,11 +449,11 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
         destructure_cbor_map! {
             let {
                 "credBlob" => cred_blob,
+                "recovery" => recovery,
                 "credProtect" => cred_protect,
                 "hmac-secret" => hmac_secret,
                 "largeBlobKey" => large_blob_key,
                 "minPinLength" => min_pin_length,
-                "recovery" => recovery,
             } = extract_map(cbor_value)?;
         }
 
