@@ -332,7 +332,7 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
 
         // let _rp_id = rp_id;
         // let _action = action;
-        let _allow_list = allow_list_cbor;
+        // let _allow_list = allow_list_cbor;
         // let fake_rp = "action worked".to_string();
 
         let action = action
@@ -342,33 +342,33 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
 
         let rp_id = rp_id.map(extract_text_string).transpose()?.unwrap();
 
-        Ok(Self {
-            // action: RecoveryExtensionAction::State,
-            action,
-            rp_id,
-            allow_list: None,
-        })
-        // let allow_list_option = allow_list_cbor.map(extract_array).transpose()?;
-        // if allow_list_option.is_some() {
-        //     let old_allow_list = allow_list_option.unwrap();
-        //     let mut allow_list = Vec::<PublicKeyCredentialDescriptor>::new();
-        //     for value in old_allow_list {
-        //         allow_list.push(PublicKeyCredentialDescriptor::try_from(value).unwrap());
-        //     }
-        //     let allow_list = Some(allow_list);
-        //     Ok(Self {
-        //         action,
-        //         rp_id,
-        //         allow_list,
-        //     })
-        // } else {
-        //     let allow_list: Option<Vec<PublicKeyCredentialDescriptor>> = None;
-        //     Ok(Self {
-        //         action,
-        //         rp_id,
-        //         allow_list,
-        //     })
-        // }
+        // Ok(Self {
+        //     // action: RecoveryExtensionAction::State,
+        //     action,
+        //     rp_id,
+        //     allow_list: None,
+        // })
+        let allow_list_option = allow_list_cbor.map(extract_array).transpose()?;
+        if allow_list_option.is_some() {
+            let old_allow_list = allow_list_option.unwrap();
+            let mut allow_list = Vec::<PublicKeyCredentialDescriptor>::new();
+            for value in old_allow_list {
+                allow_list.push(PublicKeyCredentialDescriptor::try_from(value).unwrap());
+            }
+            let allow_list = Some(allow_list);
+            Ok(Self {
+                action,
+                rp_id,
+                allow_list,
+            })
+        } else {
+            let allow_list: Option<Vec<PublicKeyCredentialDescriptor>> = None;
+            Ok(Self {
+                action,
+                rp_id,
+                allow_list,
+            })
+        }
     }
 }
 
