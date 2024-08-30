@@ -17,7 +17,7 @@ use crate::api::crypto::{ecdh, ecdsa, EC_FIELD_SIZE};
 use crate::api::customization::AAGUID_LENGTH;
 use crate::api::private_key::PrivateKey;
 use crate::env::{AesKey, Env};
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::vec::Vec;
 #[cfg(feature = "fuzz")]
 use arbitrary::Arbitrary;
