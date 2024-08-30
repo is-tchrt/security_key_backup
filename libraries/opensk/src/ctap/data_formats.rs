@@ -469,9 +469,7 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
                 return Err(Ctap2StatusCode::CTAP2_ERR_INVALID_OPTION);
             }
         }
-        let recovery = recovery
-            .map(RecoveryExtensionAction::try_from)
-            .transpose()?;
+        let recovery = recovery.map(RecoveryExtensionInput::try_from).transpose()?;
         // let fake_rp_id = "recovery wasn't there".to_string();
         // let recovery = Some(recovery.map_or(
         //     Ok(RecoveryExtensionInput {
