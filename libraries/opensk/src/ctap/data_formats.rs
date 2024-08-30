@@ -17,7 +17,7 @@ use crate::api::crypto::{ecdh, ecdsa, EC_FIELD_SIZE};
 use crate::api::customization::AAGUID_LENGTH;
 use crate::api::private_key::PrivateKey;
 use crate::env::{AesKey, Env};
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 #[cfg(feature = "fuzz")]
 use arbitrary::Arbitrary;
@@ -330,45 +330,51 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
             } = extract_map(cbor_value)?;
         }
 
-        // let _rp_id = rp_id;
+        let _rp_id = rp_id;
         // let _action = action;
         let _allow_list = allow_list_cbor;
-        // let fake_rp = "action worked".to_string();
+        let fake_rp = "allow_list worked".to_string();
 
         let action = action
             .map(RecoveryExtensionAction::try_from)
             .transpose()?
             .unwrap();
 
-        let rp_id = rp_id.map(extract_text_string).transpose()?.unwrap();
+        // let rp_id = rp_id.map(extract_text_string).transpose()?.unwrap();
 
-        Ok(Self {
-            // action: RecoveryExtensionAction::State,
-            action,
-            rp_id,
-            allow_list: None,
-        })
-        // let allow_list_option = allow_list_cbor.map(extract_array).transpose()?;
-        // if allow_list_option.is_some() {
-        //     let old_allow_list = allow_list_option.unwrap();
-        //     let mut allow_list = Vec::<PublicKeyCredentialDescriptor>::new();
-        //     for value in old_allow_list {
-        //         allow_list.push(PublicKeyCredentialDescriptor::try_from(value).unwrap());
-        //     }
-        //     let allow_list = Some(allow_list);
-        //     Ok(Self {
-        //         action,
-        //         rp_id,
-        //         allow_list,
-        //     })
-        // } else {
-        //     let allow_list: Option<Vec<PublicKeyCredentialDescriptor>> = None;
-        //     Ok(Self {
-        //         action,
-        //         rp_id,
-        //         allow_list,
-        //     })
-        // }
+        let allow_list_option = allow_list_cbor.map(extract_array).transpose()?;
+        if allow_list_option.is_some() {
+            let old_allow_list = allow_list_option.unwrap();
+            let mut allow_list = Vec::<PublicKeyCredentialDescriptor>::new();
+            for value in old_allow_list {
+                allow_list.push(PublicKeyCredentialDescriptor::try_from(value).unwrap());
+            }
+            let allow_list = Some(allow_list);
+            Ok(Self {
+                // action: RecoveryExtensionAction::State,
+                action,
+                rp_id: fake_rp,
+                allow_list: None,
+            })
+            // Ok(Self {
+            //     action,
+            //     rp_id,
+            //     allow_list,
+            // })
+        } else {
+            let allow_list: Option<Vec<PublicKeyCredentialDescriptor>> = None;
+            Ok(Self {
+                // action: RecoveryExtensionAction::State,
+                action,
+                rp_id: fake_rp,
+                allow_list: None,
+            })
+            // Ok(Self {
+            //     action,
+            //     rp_id,
+            //     allow_list,
+            // })
+        }
     }
 }
 
