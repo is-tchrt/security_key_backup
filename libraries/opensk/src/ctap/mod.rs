@@ -887,11 +887,6 @@ impl<E: Env> CtapState<E> {
         };
         let recovery = extensions.recovery;
         // writeln!(env.write(), "Testing: {:?}", recovery).expect("Printing didn't work quite right");
-        let pairing = extensions.pairing;
-        if pairing.is_some() {
-            let pairing_data = recovery::process_pairing(env, pairing.unwrap());
-            return Ok(ResponseData::AuthenticatorPairing(pairing_data));
-        };
         let has_extension_output = extensions.hmac_secret
             || extensions.cred_protect.is_some()
             || min_pin_length

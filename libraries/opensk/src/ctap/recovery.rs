@@ -24,6 +24,10 @@ use super::data_formats::{
 use super::status_code::Ctap2StatusCode;
 use super::storage::get_backup_data;
 use super::storage::key::_RESERVED_CREDENTIALS;
+use super::response::{
+    ResponseData,
+    AuthenticatorPairingResponse
+};
 
 //Takes RecoveryExtensionInput, processes it and returns the appropriate output.
 pub fn process_recovery<E: Env>(
@@ -348,16 +352,22 @@ pub fn cbor_store_backup<E: Env>(backup_data: BackupData, env: &mut E) -> Result
 pub fn process_pairing<E: Env>(
     env: &mut E,
     inputs: PairingExtensionInput
-) -> PairingExtensionOutput {
+) -> Result<ResponseData, Ctap2StatusCode> {
     match inputs.action {
-        PairingExtensionAction::Import => PairingExtensionOutput {
-            success: import_recovery_seed(inputs.seed, env).is_ok(),
-            seed: None,
-        },
-        PairingExtensionAction::Export => PairingExtensionOutput {
-            success: true,
-            seed: Some(export_recovery_seed(env)),
-        },
+        PairingExtensionAction::Import =>
+            Ok(ResponseData::AuthenticatorPairing(
+                AuthenticatorPairingResponse {
+                    success: import_recovery_seed(inputs.seed, env).is_ok(),
+                    seed: None
+                },
+            )),
+        PairingExtensionAction::Export =>
+            Ok(ResponseData::AuthenticatorPairing(
+                AuthenticatorPairingResponse {
+                    success: true,
+                    seed: Some(export_recovery_seed(env))
+                },
+            )),
     }
 }
 
