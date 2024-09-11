@@ -14,7 +14,7 @@
 
 use super::data_formats::{
     AuthenticatorTransport, CoseKey, CredentialProtectionPolicy, PackedAttestationStatement,
-    PairingExtensionOutput, PublicKeyCredentialDescriptor, PublicKeyCredentialParameter,
+    PublicKeyCredentialDescriptor, PublicKeyCredentialParameter,
     PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity,
 };
 use alloc::string::String;

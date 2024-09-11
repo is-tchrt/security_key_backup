@@ -749,7 +749,7 @@ impl<E: Env> CtapState<E> {
             pin_uv_auth_protocol,
             enterprise_attestation,
         } = make_credential_params;
-        writeln!(env.write(), "Pairing: {:?}", extensions.pairing).unwrap();
+        //writeln!(env.write(), "Pairing: {:?}", extensions.pairing).unwrap();
 
         // let backup_data = BackupData::init(env);
         // writeln!(

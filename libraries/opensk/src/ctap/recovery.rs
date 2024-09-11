@@ -17,7 +17,7 @@ use crate::ctap::{cbor_read, cbor_write};
 use crate::env::Env;
 
 use super::data_formats::{
-    BackupData, PairingExtensionAction, PairingExtensionInput, PairingExtensionOutput,
+    BackupData, PairingExtensionAction, PairingExtensionInput, 
     PublicKeyCredentialDescriptor, RecoveryExtensionAction, RecoveryExtensionInput,
     RecoveryExtensionOutput,
 };
