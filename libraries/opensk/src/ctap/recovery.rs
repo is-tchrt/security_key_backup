@@ -346,8 +346,8 @@ pub fn cbor_store_backup<E: Env>(backup_data: BackupData, env: &mut E) -> Result
 
 //Process the pairing extension
 pub fn process_pairing<E: Env>(
-    inputs: PairingExtensionInput,
     env: &mut E,
+    inputs: PairingExtensionInput
 ) -> PairingExtensionOutput {
     match inputs.action {
         PairingExtensionAction::Import => PairingExtensionOutput {

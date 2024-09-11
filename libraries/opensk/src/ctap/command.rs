@@ -31,6 +31,7 @@ use arbitrary::Arbitrary;
 use core::convert::TryFrom;
 use sk_cbor as cbor;
 use sk_cbor::destructure_cbor_map;
+use super::data_formats::PairingExtensionInput;
 
 // This constant is a consequence of the structure of messages.
 const MIN_LARGE_BLOB_LEN: usize = 17;
@@ -41,7 +42,7 @@ const MIN_LARGE_BLOB_LEN: usize = 17;
 pub enum Command {
     AuthenticatorMakeCredential(AuthenticatorMakeCredentialParameters),
     AuthenticatorGetAssertion(AuthenticatorGetAssertionParameters),
-    AuthenticatorPairing,
+    AuthenticatorPairing(PairingExtensionInput),
     AuthenticatorGetInfo,
     AuthenticatorClientPin(AuthenticatorClientPinParameters),
     AuthenticatorReset,
@@ -96,7 +97,10 @@ impl Command {
                 ))
             }
             Command::AUTHENTICATOR_PAIRING => {
-                Ok(Command::AuthenticatorPairing)
+                let decoded_cbor = cbor_read(&bytes[1..])?;
+                Ok(Command::AuthenticatorPairing(
+                    PairingExtensionInput::try_from(decoded_cbor)?,
+                ))
             }
             Command::AUTHENTICATOR_GET_INFO => {
                 // Parameters are ignored.
@@ -675,9 +679,15 @@ mod test {
     
     #[test]
     fn test_deserialize_pairing() {
-        let cbor_bytes = [Command::AUTHENTICATOR_PAIRING];
-        let command = Command::deserialize(&cbor_bytes);
-        assert_eq!(command, Ok(Command::AuthenticatorPairing));
+        let cbor_value = cbor_map! {
+            0x01 => cbor_map! {
+                "import" => 0x01,
+            },
+        };
+        let returned_pairing_params =
+            PairingExtensionInput::try_from(cbor_value).unwrap();
+        
+        // TODO: add expected output and assert
     }
 
     #[test]

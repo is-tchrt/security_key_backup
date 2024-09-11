@@ -633,7 +633,7 @@ impl<E: Env> CtapState<E> {
         match (&command, self.stateful_command_permission.get_command(env)) {
             (Command::AuthenticatorGetNextAssertion, Ok(StatefulCommand::GetAssertion(_)))
             | (Command::AuthenticatorReset, Ok(StatefulCommand::Reset))
-            | (Command::AuthenticatorPairing, Ok(StatefulCommand::Reset))
+            | (Command::AuthenticatorPairing(_), Ok(StatefulCommand::Reset))
             // AuthenticatorGetInfo still allows Reset.
             | (Command::AuthenticatorGetInfo, Ok(StatefulCommand::Reset))
             // AuthenticatorSelection still allows Reset.
@@ -672,7 +672,9 @@ impl<E: Env> CtapState<E> {
                 self.process_get_assertion(env, params, channel)
             }
             Command::AuthenticatorGetNextAssertion => self.process_get_next_assertion(env),
-            Command::AuthenticatorPairing => process_pairing(env),
+            Command::AuthenticatorPairing(params) => {
+                process_pairing(env, params)
+            }
             Command::AuthenticatorGetInfo => self.process_get_info(env),
             Command::AuthenticatorClientPin(params) => self.client_pin.process_command(env, params),
             Command::AuthenticatorReset => self.process_reset(env, channel),
@@ -887,7 +889,7 @@ impl<E: Env> CtapState<E> {
         // writeln!(env.write(), "Testing: {:?}", recovery).expect("Printing didn't work quite right");
         let pairing = extensions.pairing;
         if pairing.is_some() {
-            let pairing_data = recovery::process_pairing(pairing.unwrap(), env);
+            let pairing_data = recovery::process_pairing(env, pairing.unwrap());
             return Ok(ResponseData::AuthenticatorPairing(pairing_data));
         };
         let has_extension_output = extensions.hmac_secret
