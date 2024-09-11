@@ -82,7 +82,7 @@ use core::convert::TryFrom;
 use core::fmt::Write;
 // use data_formats::BackupData;
 use rand_core::RngCore;
-// use recovery::cbor_backups;
+ use recovery::process_pairing;
 use sk_cbor as cbor;
 use sk_cbor::cbor_map_options;
 
@@ -633,6 +633,7 @@ impl<E: Env> CtapState<E> {
         match (&command, self.stateful_command_permission.get_command(env)) {
             (Command::AuthenticatorGetNextAssertion, Ok(StatefulCommand::GetAssertion(_)))
             | (Command::AuthenticatorReset, Ok(StatefulCommand::Reset))
+            | (Command::AuthenticatorPairing, Ok(StatefulCommand::Reset))
             // AuthenticatorGetInfo still allows Reset.
             | (Command::AuthenticatorGetInfo, Ok(StatefulCommand::Reset))
             // AuthenticatorSelection still allows Reset.
@@ -671,6 +672,7 @@ impl<E: Env> CtapState<E> {
                 self.process_get_assertion(env, params, channel)
             }
             Command::AuthenticatorGetNextAssertion => self.process_get_next_assertion(env),
+            Command::AuthenticatorPairing => process_pairing(env),
             Command::AuthenticatorGetInfo => self.process_get_info(env),
             Command::AuthenticatorClientPin(params) => self.client_pin.process_command(env, params),
             Command::AuthenticatorReset => self.process_reset(env, channel),

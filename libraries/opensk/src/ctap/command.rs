@@ -41,6 +41,7 @@ const MIN_LARGE_BLOB_LEN: usize = 17;
 pub enum Command {
     AuthenticatorMakeCredential(AuthenticatorMakeCredentialParameters),
     AuthenticatorGetAssertion(AuthenticatorGetAssertionParameters),
+    AuthenticatorPairing,
     AuthenticatorGetInfo,
     AuthenticatorClientPin(AuthenticatorClientPinParameters),
     AuthenticatorReset,
@@ -55,6 +56,7 @@ pub enum Command {
 impl Command {
     const AUTHENTICATOR_MAKE_CREDENTIAL: u8 = 0x01;
     const AUTHENTICATOR_GET_ASSERTION: u8 = 0x02;
+    const AUTHENTICATOR_PAIRING: u8 = 0x03;
     const AUTHENTICATOR_GET_INFO: u8 = 0x04;
     const AUTHENTICATOR_CLIENT_PIN: u8 = 0x06;
     const AUTHENTICATOR_RESET: u8 = 0x07;
@@ -92,6 +94,9 @@ impl Command {
                 Ok(Command::AuthenticatorGetAssertion(
                     AuthenticatorGetAssertionParameters::try_from(decoded_cbor)?,
                 ))
+            }
+            Command::AUTHENTICATOR_PAIRING => {
+                Ok(Command::AuthenticatorPairing)
             }
             Command::AUTHENTICATOR_GET_INFO => {
                 // Parameters are ignored.
@@ -666,6 +671,13 @@ mod test {
             returned_client_pin_parameters,
             expected_client_pin_parameters
         );
+    }
+    
+    #[test]
+    fn test_deserialize_pairing() {
+        let cbor_bytes = [Command::AUTHENTICATOR_PAIRING];
+        let command = Command::deserialize(&cbor_bytes);
+        assert_eq!(command, Ok(Command::AuthenticatorPairing));
     }
 
     #[test]
