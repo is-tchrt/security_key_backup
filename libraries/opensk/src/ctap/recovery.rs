@@ -17,17 +17,12 @@ use crate::ctap::{cbor_read, cbor_write};
 use crate::env::Env;
 
 use super::data_formats::{
-    BackupData, PairingExtensionAction, PairingExtensionInput, 
-    PublicKeyCredentialDescriptor, RecoveryExtensionAction, RecoveryExtensionInput,
-    RecoveryExtensionOutput,
+    BackupData, PublicKeyCredentialDescriptor, RecoveryExtensionAction, RecoveryExtensionInput,
+    RecoveryExtensionOutput
 };
 use super::status_code::Ctap2StatusCode;
 use super::storage::get_backup_data;
 use super::storage::key::_RESERVED_CREDENTIALS;
-use super::response::{
-    ResponseData,
-    AuthenticatorPairingResponse
-};
 
 //Takes RecoveryExtensionInput, processes it and returns the appropriate output.
 pub fn process_recovery<E: Env>(
@@ -346,29 +341,6 @@ pub fn cbor_store_backup<E: Env>(backup_data: BackupData, env: &mut E) -> Result
     let cbor_backup = cbor_backups(backup_data);
     env.store()
         .insert(_RESERVED_CREDENTIALS.start, &cbor_backup.as_slice())
-}
-
-//Process the pairing extension
-pub fn process_pairing<E: Env>(
-    env: &mut E,
-    inputs: PairingExtensionInput
-) -> Result<ResponseData, Ctap2StatusCode> {
-    match inputs.action {
-        PairingExtensionAction::Import =>
-            Ok(ResponseData::AuthenticatorPairing(
-                AuthenticatorPairingResponse {
-                    success: import_recovery_seed(inputs.seed, env).is_ok(),
-                    seed: None
-                },
-            )),
-        PairingExtensionAction::Export =>
-            Ok(ResponseData::AuthenticatorPairing(
-                AuthenticatorPairingResponse {
-                    success: true,
-                    seed: Some(export_recovery_seed(env))
-                },
-            )),
-    }
 }
 
 //Process the export_recovery_seed command

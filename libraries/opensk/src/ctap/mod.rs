@@ -48,13 +48,17 @@ use self::data_formats::{
     AuthenticatorTransport, CredentialProtectionPolicy, EnterpriseAttestationMode,
     GetAssertionExtensions, PackedAttestationStatement, PinUvAuthProtocol,
     PublicKeyCredentialDescriptor, PublicKeyCredentialParameter, PublicKeyCredentialSource,
-    PublicKeyCredentialType, PublicKeyCredentialUserEntity, SignatureAlgorithm,
+    PublicKeyCredentialType, PublicKeyCredentialUserEntity, SignatureAlgorithm, 
+    PairingExtensionAction, PairingExtensionInput
 };
 use self::hid::{ChannelID, CtapHid, CtapHidCommand, KeepaliveStatus, ProcessedPacket};
 use self::large_blobs::LargeBlobs;
 use self::response::{
     AuthenticatorGetAssertionResponse, AuthenticatorGetInfoResponse,
     AuthenticatorMakeCredentialResponse, ResponseData,
+};
+use recovery::{
+    export_recovery_seed, import_recovery_seed
 };
 use self::secret::Secret;
 use self::status_code::Ctap2StatusCode;
@@ -80,9 +84,9 @@ use alloc::vec::Vec;
 use byteorder::{BigEndian, ByteOrder};
 use core::convert::TryFrom;
 use core::fmt::Write;
+use crate::ctap::response::AuthenticatorPairingResponse;
 // use data_formats::BackupData;
 use rand_core::RngCore;
- use recovery::process_pairing;
 use sk_cbor as cbor;
 use sk_cbor::cbor_map_options;
 
@@ -673,7 +677,7 @@ impl<E: Env> CtapState<E> {
             }
             Command::AuthenticatorGetNextAssertion => self.process_get_next_assertion(env),
             Command::AuthenticatorPairing(params) => {
-                process_pairing(env, params)
+                self.process_pairing(env, params)
             }
             Command::AuthenticatorGetInfo => self.process_get_info(env),
             Command::AuthenticatorClientPin(params) => self.client_pin.process_command(env, params),
@@ -1334,6 +1338,29 @@ impl<E: Env> CtapState<E> {
         self.assertion_response(env, credential, assertion_input, None, true)
     }
 
+    pub fn process_pairing(
+        &mut self,
+        env: &mut E,
+        inputs: PairingExtensionInput
+    ) -> Result<ResponseData, Ctap2StatusCode> {
+        match inputs.action {
+            PairingExtensionAction::Import =>
+                Ok(ResponseData::AuthenticatorPairing(
+                    AuthenticatorPairingResponse {
+                        success: import_recovery_seed(inputs.seed, env).is_ok(),
+                        seed: None
+                    },
+                )),
+            PairingExtensionAction::Export =>
+                Ok(ResponseData::AuthenticatorPairing(
+                    AuthenticatorPairingResponse {
+                        success: true,
+                        seed: Some(export_recovery_seed(env))
+                    },
+                )),
+        }
+    }
+
     fn process_get_info(&self, env: &mut E) -> Result<ResponseData, Ctap2StatusCode> {
         let has_always_uv = storage::has_always_uv(env)?;
         #[cfg_attr(not(feature = "with_ctap1"), allow(unused_mut))]
@@ -1615,7 +1642,46 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_pairing() {
+        let mut env = TestEnv::default();
+        let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
+        let pair_response = ctap_state.process_pairing(&mut env).unwrap();
+    }
+
     fn create_minimal_make_credential_parameters() -> AuthenticatorMakeCredentialParameters {
+        let client_data_hash = vec![0xCD];
+        let rp = PublicKeyCredentialRpEntity {
+            rp_id: String::from("example.com"),
+            rp_name: None,
+            rp_icon: None,
+        };
+        let user = PublicKeyCredentialUserEntity {
+            user_id: vec![0x1D],
+            user_name: None,
+            user_display_name: None,
+            user_icon: None,
+        };
+        let pub_key_cred_params = vec![ES256_CRED_PARAM];
+        let options = MakeCredentialOptions {
+            rk: true,
+            uv: false,
+        };
+        AuthenticatorMakeCredentialParameters {
+            client_data_hash,
+            rp,
+            user,
+            pub_key_cred_params,
+            exclude_list: None,
+            extensions: MakeCredentialExtensions::default(),
+            options,
+            pin_uv_auth_param: None,
+            pin_uv_auth_protocol: None,
+            enterprise_attestation: None,
+        }
+    }
+    
+    fn create_minimal_pairing_parameters() -> AuthenticatorMakeCredentialParameters {
         let client_data_hash = vec![0xCD];
         let rp = PublicKeyCredentialRpEntity {
             rp_id: String::from("example.com"),
