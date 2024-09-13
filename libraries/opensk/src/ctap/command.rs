@@ -31,6 +31,7 @@ use arbitrary::Arbitrary;
 use core::convert::TryFrom;
 use sk_cbor as cbor;
 use sk_cbor::destructure_cbor_map;
+use super::data_formats::PairingExtensionInput;
 
 // This constant is a consequence of the structure of messages.
 const MIN_LARGE_BLOB_LEN: usize = 17;
@@ -41,6 +42,7 @@ const MIN_LARGE_BLOB_LEN: usize = 17;
 pub enum Command {
     AuthenticatorMakeCredential(AuthenticatorMakeCredentialParameters),
     AuthenticatorGetAssertion(AuthenticatorGetAssertionParameters),
+    AuthenticatorPairing(PairingExtensionInput),
     AuthenticatorGetInfo,
     AuthenticatorClientPin(AuthenticatorClientPinParameters),
     AuthenticatorReset,
@@ -55,6 +57,7 @@ pub enum Command {
 impl Command {
     const AUTHENTICATOR_MAKE_CREDENTIAL: u8 = 0x01;
     const AUTHENTICATOR_GET_ASSERTION: u8 = 0x02;
+    const AUTHENTICATOR_PAIRING: u8 = 0x03;
     const AUTHENTICATOR_GET_INFO: u8 = 0x04;
     const AUTHENTICATOR_CLIENT_PIN: u8 = 0x06;
     const AUTHENTICATOR_RESET: u8 = 0x07;
@@ -91,6 +94,12 @@ impl Command {
                 let decoded_cbor = cbor_read(&bytes[1..])?;
                 Ok(Command::AuthenticatorGetAssertion(
                     AuthenticatorGetAssertionParameters::try_from(decoded_cbor)?,
+                ))
+            }
+            Command::AUTHENTICATOR_PAIRING => {
+                let decoded_cbor = cbor_read(&bytes[1..])?;
+                Ok(Command::AuthenticatorPairing(
+                    PairingExtensionInput::try_from(decoded_cbor)?,
                 ))
             }
             Command::AUTHENTICATOR_GET_INFO => {
@@ -666,6 +675,18 @@ mod test {
             returned_client_pin_parameters,
             expected_client_pin_parameters
         );
+    }
+    
+    #[test]
+    fn test_deserialize_pairing() {
+        let cbor_value = cbor_map! {
+            "seed" => vec![0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F],
+            "action" => "import",
+        };
+        let returned_pairing_params =
+            PairingExtensionInput::try_from(cbor_value).unwrap();
+        
+        // TODO: add expected output and assert
     }
 
     #[test]

@@ -430,7 +430,8 @@ pub struct PairingExtensionInput {
     pub action: PairingExtensionAction,
     pub seed: Option<Value>,
 }
-
+//^^^Extend this in the command.rs for pairing from that gihub link
+//
 impl TryFrom<cbor::Value> for PairingExtensionInput {
     type Error = Ctap2StatusCode;
 
@@ -439,6 +440,7 @@ impl TryFrom<cbor::Value> for PairingExtensionInput {
             let {
             "seed" => seed,
             "action" => action,
+            //Add stuff here need to be in order of length and alphabetical order
             } = extract_map(cbor_value)?;
         }
         let action = action
@@ -473,7 +475,6 @@ pub struct MakeCredentialExtensions {
     pub cred_blob: Option<Vec<u8>>,
     pub large_blob_key: Option<bool>,
     pub recovery: Option<RecoveryExtensionInput>,
-    pub pairing: Option<PairingExtensionInput>,
 }
 
 impl TryFrom<cbor::Value> for MakeCredentialExtensions {
@@ -482,7 +483,6 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
     fn try_from(cbor_value: cbor::Value) -> Result<Self, Ctap2StatusCode> {
         destructure_cbor_map! {
             let {
-                "pairing" => pairing,
                 "credBlob" => cred_blob,
                 "recovery" => recovery,
                 "credProtect" => cred_protect,
@@ -505,7 +505,6 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
             }
         }
         let recovery = recovery.map(RecoveryExtensionInput::try_from).transpose()?;
-        let pairing = pairing.map(PairingExtensionInput::try_from).transpose()?;
         Ok(Self {
             hmac_secret,
             cred_protect,
@@ -513,7 +512,6 @@ impl TryFrom<cbor::Value> for MakeCredentialExtensions {
             cred_blob,
             large_blob_key,
             recovery,
-            pairing,
         })
     }
 }
@@ -1881,7 +1879,6 @@ mod test {
             cred_blob: Some(vec![0xCB]),
             large_blob_key: Some(true),
             recovery: None,
-            pairing: None,
         };
         assert_eq!(extensions, Ok(expected_extensions));
     }

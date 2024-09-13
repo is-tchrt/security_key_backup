@@ -17,9 +17,8 @@ use crate::ctap::{cbor_read, cbor_write};
 use crate::env::Env;
 
 use super::data_formats::{
-    BackupData, PairingExtensionAction, PairingExtensionInput, PairingExtensionOutput,
-    PublicKeyCredentialDescriptor, RecoveryExtensionAction, RecoveryExtensionInput,
-    RecoveryExtensionOutput,
+    BackupData, PublicKeyCredentialDescriptor, RecoveryExtensionAction, RecoveryExtensionInput,
+    RecoveryExtensionOutput
 };
 use super::status_code::Ctap2StatusCode;
 use super::storage::get_backup_data;
@@ -342,23 +341,6 @@ pub fn cbor_store_backup<E: Env>(backup_data: BackupData, env: &mut E) -> Result
     let cbor_backup = cbor_backups(backup_data);
     env.store()
         .insert(_RESERVED_CREDENTIALS.start, &cbor_backup.as_slice())
-}
-
-//Process the pairing extension
-pub fn process_pairing<E: Env>(
-    inputs: PairingExtensionInput,
-    env: &mut E,
-) -> PairingExtensionOutput {
-    match inputs.action {
-        PairingExtensionAction::Import => PairingExtensionOutput {
-            success: import_recovery_seed(inputs.seed, env).is_ok(),
-            seed: None,
-        },
-        PairingExtensionAction::Export => PairingExtensionOutput {
-            success: true,
-            seed: Some(export_recovery_seed(env)),
-        },
-    }
 }
 
 //Process the export_recovery_seed command

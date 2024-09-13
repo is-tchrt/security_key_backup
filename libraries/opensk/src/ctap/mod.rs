@@ -48,13 +48,17 @@ use self::data_formats::{
     AuthenticatorTransport, CredentialProtectionPolicy, EnterpriseAttestationMode,
     GetAssertionExtensions, PackedAttestationStatement, PinUvAuthProtocol,
     PublicKeyCredentialDescriptor, PublicKeyCredentialParameter, PublicKeyCredentialSource,
-    PublicKeyCredentialType, PublicKeyCredentialUserEntity, SignatureAlgorithm,
+    PublicKeyCredentialType, PublicKeyCredentialUserEntity, SignatureAlgorithm, 
+    PairingExtensionAction, PairingExtensionInput
 };
 use self::hid::{ChannelID, CtapHid, CtapHidCommand, KeepaliveStatus, ProcessedPacket};
 use self::large_blobs::LargeBlobs;
 use self::response::{
     AuthenticatorGetAssertionResponse, AuthenticatorGetInfoResponse,
     AuthenticatorMakeCredentialResponse, ResponseData,
+};
+use recovery::{
+    export_recovery_seed, import_recovery_seed
 };
 use self::secret::Secret;
 use self::status_code::Ctap2StatusCode;
@@ -80,9 +84,9 @@ use alloc::vec::Vec;
 use byteorder::{BigEndian, ByteOrder};
 use core::convert::TryFrom;
 use core::fmt::Write;
+use crate::ctap::response::AuthenticatorPairingResponse;
 // use data_formats::BackupData;
 use rand_core::RngCore;
-// use recovery::cbor_backups;
 use sk_cbor as cbor;
 use sk_cbor::cbor_map_options;
 
@@ -633,6 +637,7 @@ impl<E: Env> CtapState<E> {
         match (&command, self.stateful_command_permission.get_command(env)) {
             (Command::AuthenticatorGetNextAssertion, Ok(StatefulCommand::GetAssertion(_)))
             | (Command::AuthenticatorReset, Ok(StatefulCommand::Reset))
+            | (Command::AuthenticatorPairing(_), Ok(StatefulCommand::Reset))
             // AuthenticatorGetInfo still allows Reset.
             | (Command::AuthenticatorGetInfo, Ok(StatefulCommand::Reset))
             // AuthenticatorSelection still allows Reset.
@@ -671,6 +676,9 @@ impl<E: Env> CtapState<E> {
                 self.process_get_assertion(env, params, channel)
             }
             Command::AuthenticatorGetNextAssertion => self.process_get_next_assertion(env),
+            Command::AuthenticatorPairing(params) => {
+                self.process_pairing(env, params)
+            }
             Command::AuthenticatorGetInfo => self.process_get_info(env),
             Command::AuthenticatorClientPin(params) => self.client_pin.process_command(env, params),
             Command::AuthenticatorReset => self.process_reset(env, channel),
@@ -745,7 +753,7 @@ impl<E: Env> CtapState<E> {
             pin_uv_auth_protocol,
             enterprise_attestation,
         } = make_credential_params;
-        writeln!(env.write(), "Pairing: {:?}", extensions.pairing).unwrap();
+        //writeln!(env.write(), "Pairing: {:?}", extensions.pairing).unwrap();
 
         // let backup_data = BackupData::init(env);
         // writeln!(
@@ -883,11 +891,6 @@ impl<E: Env> CtapState<E> {
         };
         let recovery = extensions.recovery;
         // writeln!(env.write(), "Testing: {:?}", recovery).expect("Printing didn't work quite right");
-        let pairing = extensions.pairing;
-        if pairing.is_some() {
-            let pairing_data = recovery::process_pairing(pairing.unwrap(), env);
-            return Ok(ResponseData::AuthenticatorPairing(pairing_data));
-        };
         let has_extension_output = extensions.hmac_secret
             || extensions.cred_protect.is_some()
             || min_pin_length
@@ -1335,6 +1338,29 @@ impl<E: Env> CtapState<E> {
         self.assertion_response(env, credential, assertion_input, None, true)
     }
 
+    pub fn process_pairing(
+        &mut self,
+        env: &mut E,
+        inputs: PairingExtensionInput
+    ) -> Result<ResponseData, Ctap2StatusCode> {
+        match inputs.action {
+            PairingExtensionAction::Import =>
+                Ok(ResponseData::AuthenticatorPairing(
+                    AuthenticatorPairingResponse {
+                        success: import_recovery_seed(inputs.seed, env).is_ok(),
+                        seed: None
+                    },
+                )),
+            PairingExtensionAction::Export =>
+                Ok(ResponseData::AuthenticatorPairing(
+                    AuthenticatorPairingResponse {
+                        success: true,
+                        seed: Some(export_recovery_seed(env))
+                    },
+                )),
+        }
+    }
+
     fn process_get_info(&self, env: &mut E) -> Result<ResponseData, Ctap2StatusCode> {
         let has_always_uv = storage::has_always_uv(env)?;
         #[cfg_attr(not(feature = "with_ctap1"), allow(unused_mut))]
@@ -1492,6 +1518,7 @@ mod test {
     use crate::env::EcdhSk;
     use crate::test_helpers;
     use cbor::{cbor_array, cbor_array_vec, cbor_map};
+    use sk_cbor::Value;
 
     // The keep-alive logic in the processing of some commands needs a channel ID to send
     // keep-alive packets to.
@@ -1616,6 +1643,14 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_pairing() {
+        let mut env = TestEnv::default();
+        let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
+        let params: PairingExtensionInput = create_minimal_pairing_parameters();
+        let pair_response = ctap_state.process_pairing(&mut env, params).unwrap();
+    }
+
     fn create_minimal_make_credential_parameters() -> AuthenticatorMakeCredentialParameters {
         let client_data_hash = vec![0xCD];
         let rp = PublicKeyCredentialRpEntity {
@@ -1646,6 +1681,32 @@ mod test {
             pin_uv_auth_protocol: None,
             enterprise_attestation: None,
         }
+    }
+
+    fn create_minimal_pairing_parameters() -> PairingExtensionInput {
+        let alg_value = Value::byte_string(vec![1]); // Algorithm byte
+        let aaguid_value = Value::byte_string(vec![0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF1]);
+        let public_key_value = Value::byte_string(vec![
+            0x04,
+
+            0x6B, 0x17, 0xD1, 0xF2, 0xE1, 0x2C, 0x42, 0x47, 0xF8, 0xBC, 0xE6, 0xE5, 0x63, 0xA4, 0x40, 0xF2,
+            0x77, 0x03, 0x7D, 0x81, 0x2D, 0xEB, 0x33, 0xA0, 0xF4, 0xA1, 0x39, 0x45, 0xD8, 0x98, 0xC2, 0x96,
+
+            0x4F, 0xE3, 0x42, 0xE2, 0xFE, 0x1A, 0x7F, 0x9B, 0x8E, 0xE7, 0xEB, 0x4A, 0x7C, 0x0F, 0x9E, 0x16,
+            0x2B, 0xCE, 0x33, 0x57, 0x6B, 0x31, 0x5E, 0xCE, 0xCB, 0xB6, 0x40, 0x68, 0x37, 0xBF, 0x51, 0xF5
+        ]);
+
+        let cbor_seed = Value::map(vec![
+            (Value::unsigned(0), alg_value),
+            (Value::unsigned(1), aaguid_value),
+            (Value::unsigned(2), public_key_value),
+        ]);
+        let cbor_value = cbor_map! {
+            "seed" => cbor_seed,
+            "action" => "import",
+        };
+
+        PairingExtensionInput::try_from(cbor_value).unwrap()
     }
 
     fn create_make_credential_parameters_with_exclude_list(

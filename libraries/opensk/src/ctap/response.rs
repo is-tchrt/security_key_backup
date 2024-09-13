@@ -14,14 +14,14 @@
 
 use super::data_formats::{
     AuthenticatorTransport, CoseKey, CredentialProtectionPolicy, PackedAttestationStatement,
-    PairingExtensionOutput, PublicKeyCredentialDescriptor, PublicKeyCredentialParameter,
+    PublicKeyCredentialDescriptor, PublicKeyCredentialParameter,
     PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity,
 };
 use alloc::string::String;
 use alloc::vec::Vec;
 use sk_cbor as cbor;
 use sk_cbor::{
-    cbor_array_vec, cbor_bool, cbor_int, cbor_map_collection, cbor_map_options, cbor_text,
+    cbor_array_vec, cbor_bool, cbor_int, cbor_map_collection, cbor_map_options, cbor_text, Value
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -30,13 +30,13 @@ pub enum ResponseData {
     AuthenticatorMakeCredential(AuthenticatorMakeCredentialResponse),
     AuthenticatorGetAssertion(AuthenticatorGetAssertionResponse),
     AuthenticatorGetNextAssertion(AuthenticatorGetAssertionResponse),
+    AuthenticatorPairing(AuthenticatorPairingResponse),
     AuthenticatorGetInfo(AuthenticatorGetInfoResponse),
     AuthenticatorClientPin(Option<AuthenticatorClientPinResponse>),
     AuthenticatorReset,
     AuthenticatorCredentialManagement(Option<AuthenticatorCredentialManagementResponse>),
     AuthenticatorSelection,
     AuthenticatorLargeBlobs(Option<AuthenticatorLargeBlobsResponse>),
-    AuthenticatorPairing(PairingExtensionOutput),
     #[cfg(feature = "config_command")]
     AuthenticatorConfig,
 }
@@ -47,13 +47,13 @@ impl From<ResponseData> for Option<cbor::Value> {
             ResponseData::AuthenticatorMakeCredential(data) => Some(data.into()),
             ResponseData::AuthenticatorGetAssertion(data) => Some(data.into()),
             ResponseData::AuthenticatorGetNextAssertion(data) => Some(data.into()),
+            ResponseData::AuthenticatorPairing(data) => Some(data.into()),
             ResponseData::AuthenticatorGetInfo(data) => Some(data.into()),
             ResponseData::AuthenticatorClientPin(data) => data.map(|d| d.into()),
             ResponseData::AuthenticatorReset => None,
             ResponseData::AuthenticatorCredentialManagement(data) => data.map(|d| d.into()),
             ResponseData::AuthenticatorSelection => None,
             ResponseData::AuthenticatorLargeBlobs(data) => data.map(|d| d.into()),
-            ResponseData::AuthenticatorPairing(data) => Some(data.into()),
             #[cfg(feature = "config_command")]
             ResponseData::AuthenticatorConfig => None,
         }
@@ -118,6 +118,21 @@ impl From<AuthenticatorGetAssertionResponse> for cbor::Value {
             0x04 => user,
             0x05 => number_of_credentials,
             0x07 => large_blob_key,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct AuthenticatorPairingResponse {
+    pub success: bool,
+    pub seed: Option<Value>,
+}
+
+impl From<AuthenticatorPairingResponse> for cbor::Value {
+    fn from(output: AuthenticatorPairingResponse) -> Self {
+        cbor_map_options! {
+            "seed" => output.seed,
+            "success" => output.success,
         }
     }
 }
