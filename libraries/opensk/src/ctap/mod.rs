@@ -46,19 +46,16 @@ use self::config_command::process_config;
 use self::credential_management::process_credential_management;
 use self::data_formats::{
     AuthenticatorTransport, CredentialProtectionPolicy, EnterpriseAttestationMode,
-    GetAssertionExtensions, PackedAttestationStatement, PinUvAuthProtocol,
-    PublicKeyCredentialDescriptor, PublicKeyCredentialParameter, PublicKeyCredentialSource,
-    PublicKeyCredentialType, PublicKeyCredentialUserEntity, SignatureAlgorithm, 
-    PairingExtensionAction, PairingExtensionInput
+    GetAssertionExtensions, PackedAttestationStatement, PairingExtensionAction,
+    PairingExtensionInput, PinUvAuthProtocol, PublicKeyCredentialDescriptor,
+    PublicKeyCredentialParameter, PublicKeyCredentialSource, PublicKeyCredentialType,
+    PublicKeyCredentialUserEntity, SignatureAlgorithm,
 };
 use self::hid::{ChannelID, CtapHid, CtapHidCommand, KeepaliveStatus, ProcessedPacket};
 use self::large_blobs::LargeBlobs;
 use self::response::{
     AuthenticatorGetAssertionResponse, AuthenticatorGetInfoResponse,
     AuthenticatorMakeCredentialResponse, ResponseData,
-};
-use recovery::{
-    export_recovery_seed, import_recovery_seed
 };
 use self::secret::Secret;
 use self::status_code::Ctap2StatusCode;
@@ -76,6 +73,7 @@ use crate::api::key_store::{CredentialSource, KeyStore, MAX_CREDENTIAL_ID_SIZE};
 use crate::api::private_key::PrivateKey;
 use crate::api::rng::Rng;
 use crate::api::user_presence::{UserPresence, UserPresenceError};
+use crate::ctap::response::AuthenticatorPairingResponse;
 use crate::env::{EcdsaSk, Env, Hkdf, Sha};
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
@@ -84,7 +82,7 @@ use alloc::vec::Vec;
 use byteorder::{BigEndian, ByteOrder};
 use core::convert::TryFrom;
 use core::fmt::Write;
-use crate::ctap::response::AuthenticatorPairingResponse;
+use recovery::{export_recovery_seed, import_recovery_seed};
 // use data_formats::BackupData;
 use rand_core::RngCore;
 use sk_cbor as cbor;
@@ -676,9 +674,7 @@ impl<E: Env> CtapState<E> {
                 self.process_get_assertion(env, params, channel)
             }
             Command::AuthenticatorGetNextAssertion => self.process_get_next_assertion(env),
-            Command::AuthenticatorPairing(params) => {
-                self.process_pairing(env, params)
-            }
+            Command::AuthenticatorPairing(params) => self.process_pairing(env, params),
             Command::AuthenticatorGetInfo => self.process_get_info(env),
             Command::AuthenticatorClientPin(params) => self.client_pin.process_command(env, params),
             Command::AuthenticatorReset => self.process_reset(env, channel),
@@ -1341,23 +1337,27 @@ impl<E: Env> CtapState<E> {
     pub fn process_pairing(
         &mut self,
         env: &mut E,
-        inputs: PairingExtensionInput
+        inputs: PairingExtensionInput,
     ) -> Result<ResponseData, Ctap2StatusCode> {
+        writeln!(
+            env.write(),
+            "Entered process pairing. Inputs: {:?}",
+            inputs.action
+        )
+        .unwrap();
         match inputs.action {
-            PairingExtensionAction::Import =>
-                Ok(ResponseData::AuthenticatorPairing(
-                    AuthenticatorPairingResponse {
-                        success: import_recovery_seed(inputs.seed, env).is_ok(),
-                        seed: None
-                    },
-                )),
-            PairingExtensionAction::Export =>
-                Ok(ResponseData::AuthenticatorPairing(
-                    AuthenticatorPairingResponse {
-                        success: true,
-                        seed: Some(export_recovery_seed(env))
-                    },
-                )),
+            PairingExtensionAction::Import => Ok(ResponseData::AuthenticatorPairing(
+                AuthenticatorPairingResponse {
+                    success: import_recovery_seed(inputs.seed, env).is_ok(),
+                    seed: None,
+                },
+            )),
+            PairingExtensionAction::Export => Ok(ResponseData::AuthenticatorPairing(
+                AuthenticatorPairingResponse {
+                    success: true,
+                    seed: Some(export_recovery_seed(env)),
+                },
+            )),
         }
     }
 
@@ -1685,15 +1685,16 @@ mod test {
 
     fn create_minimal_pairing_parameters() -> PairingExtensionInput {
         let alg_value = Value::byte_string(vec![1]); // Algorithm byte
-        let aaguid_value = Value::byte_string(vec![0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF1]);
+        let aaguid_value = Value::byte_string(vec![
+            0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC,
+            0xDE, 0xF1,
+        ]);
         let public_key_value = Value::byte_string(vec![
-            0x04,
-
-            0x6B, 0x17, 0xD1, 0xF2, 0xE1, 0x2C, 0x42, 0x47, 0xF8, 0xBC, 0xE6, 0xE5, 0x63, 0xA4, 0x40, 0xF2,
-            0x77, 0x03, 0x7D, 0x81, 0x2D, 0xEB, 0x33, 0xA0, 0xF4, 0xA1, 0x39, 0x45, 0xD8, 0x98, 0xC2, 0x96,
-
-            0x4F, 0xE3, 0x42, 0xE2, 0xFE, 0x1A, 0x7F, 0x9B, 0x8E, 0xE7, 0xEB, 0x4A, 0x7C, 0x0F, 0x9E, 0x16,
-            0x2B, 0xCE, 0x33, 0x57, 0x6B, 0x31, 0x5E, 0xCE, 0xCB, 0xB6, 0x40, 0x68, 0x37, 0xBF, 0x51, 0xF5
+            0x04, 0x6B, 0x17, 0xD1, 0xF2, 0xE1, 0x2C, 0x42, 0x47, 0xF8, 0xBC, 0xE6, 0xE5, 0x63,
+            0xA4, 0x40, 0xF2, 0x77, 0x03, 0x7D, 0x81, 0x2D, 0xEB, 0x33, 0xA0, 0xF4, 0xA1, 0x39,
+            0x45, 0xD8, 0x98, 0xC2, 0x96, 0x4F, 0xE3, 0x42, 0xE2, 0xFE, 0x1A, 0x7F, 0x9B, 0x8E,
+            0xE7, 0xEB, 0x4A, 0x7C, 0x0F, 0x9E, 0x16, 0x2B, 0xCE, 0x33, 0x57, 0x6B, 0x31, 0x5E,
+            0xCE, 0xCB, 0xB6, 0x40, 0x68, 0x37, 0xBF, 0x51, 0xF5,
         ]);
 
         let cbor_seed = Value::map(vec![

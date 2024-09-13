@@ -132,3 +132,5 @@ Added impl try_from<cbor::Value> for PairingExtensionInput etc. on line 418 of m
 
 Added impl try_from<cbor::Value> for PairingExtensionAction etc. on line 412 of mod.rs
 
+TODO: rewrite pairing to return AttestationResponse. att_stmt may be able to take any data type
+
