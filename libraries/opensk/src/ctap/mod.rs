@@ -1644,11 +1644,20 @@ mod test {
     }
 
     #[test]
-    fn test_pairing() {
+    fn test_import_pairing() {
         let mut env = TestEnv::default();
         let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
-        let params: PairingExtensionInput = create_minimal_pairing_parameters();
+        let params: PairingExtensionInput = create_minimal_pairing_parameters("import");
         let pair_response = ctap_state.process_pairing(&mut env, params).unwrap();
+        match pair_response {
+            ResponseData::AuthenticatorPairing(AuthenticatorPairingResponse { success, seed }) => {
+                assert_eq!(success, true);
+                assert_eq!(seed, None);
+            }
+            _ => {
+                panic!("Response is not an AuthenticatorPairing variant");
+            }
+        }
     }
 
     fn create_minimal_make_credential_parameters() -> AuthenticatorMakeCredentialParameters {
@@ -1683,7 +1692,7 @@ mod test {
         }
     }
 
-    fn create_minimal_pairing_parameters() -> PairingExtensionInput {
+    fn create_minimal_pairing_parameters(action_type: &str) -> PairingExtensionInput {
         let alg_value = Value::byte_string(vec![1]); // Algorithm byte
         let aaguid_value = Value::byte_string(vec![
             0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC,
@@ -1704,7 +1713,7 @@ mod test {
         ]);
         let cbor_value = cbor_map! {
             "seed" => cbor_seed,
-            "action" => "import",
+            "action" => action_type,
         };
 
         PairingExtensionInput::try_from(cbor_value).unwrap()
