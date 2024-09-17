@@ -600,7 +600,6 @@ impl<E: Env> CtapState<E> {
             return response;
         }
         let cmd = Command::deserialize(command_cbor);
-        writeln!(env.write(), "Received command: {:x?}", cmd).unwrap();
         debug_ctap!(env, "Received command: {:#?}", cmd);
         let response = cmd.and_then(|command| self.process_parsed_command(env, command, channel));
         debug_ctap!(env, "Sending response: {:#?}", response);

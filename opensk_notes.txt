@@ -134,3 +134,5 @@ Added impl try_from<cbor::Value> for PairingExtensionAction etc. on line 412 of 
 
 TODO: rewrite pairing to return AttestationResponse. att_stmt may be able to take any data type
 
+Change the try_from thing to use integers instead of strings, and things will work better.
+
