@@ -599,7 +599,6 @@ impl<E: Env> CtapState<E> {
             self.stateful_command_permission.clear();
             return response;
         }
-        writeln!(env.write(), "CBOR: {:x?}", command_cbor).unwrap();
         let cmd = Command::deserialize(command_cbor);
         debug_ctap!(env, "Received command: {:#?}", cmd);
         let response = cmd.and_then(|command| self.process_parsed_command(env, command, channel));
@@ -628,6 +627,7 @@ impl<E: Env> CtapState<E> {
         command: Command,
         channel: Channel,
     ) -> Result<ResponseData, Ctap2StatusCode> {
+        writeln!(env.write(), "Entered process_parsed_command").unwrap();
         // The auth token timeouts are checked once here, to make error codes consistent. If your
         // auth token hasn't timed out now, you can fully use it for this command.
         self.client_pin.update_timeouts(env);
@@ -666,6 +666,7 @@ impl<E: Env> CtapState<E> {
         command: Command,
         channel: Channel,
     ) -> Result<ResponseData, Ctap2StatusCode> {
+        writeln!(env.write(), "Entered process_fido_command").unwrap();
         match command {
             Command::AuthenticatorMakeCredential(params) => {
                 self.process_make_credential(env, params, channel)

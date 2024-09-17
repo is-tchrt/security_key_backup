@@ -124,15 +124,21 @@ impl From<AuthenticatorGetAssertionResponse> for cbor::Value {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AuthenticatorPairingResponse {
-    pub success: bool,
     pub seed: Option<Value>,
+    pub success: bool,
+
 }
 
-impl From<AuthenticatorPairingResponse> for cbor::Value {
+impl From<AuthenticatorPairingResponse> for Value {
     fn from(output: AuthenticatorPairingResponse) -> Self {
+        let AuthenticatorPairingResponse {
+            seed,
+            success
+        } = output;
+
         cbor_map_options! {
-            "seed" => output.seed,
-            "success" => output.success,
+            0x01 => seed,
+            0x02 => success,
         }
     }
 }
