@@ -1518,7 +1518,7 @@ mod test {
     use crate::env::EcdhSk;
     use crate::test_helpers;
     use cbor::{cbor_array, cbor_array_vec, cbor_map};
-    use sk_cbor::Value;
+    use sk_cbor::{cbor_bool, Value};
 
     // The keep-alive logic in the processing of some commands needs a channel ID to send
     // keep-alive packets to.
@@ -3196,15 +3196,22 @@ mod test {
         let input_cbor_value = create_minimal_pairing_parameters_import();
 
         assert!(cbor_write(input_cbor_value, &mut command_cbor).is_ok());
-        let command_res = ctap_state.process_command(&mut env, &command_cbor, DUMMY_CHANNEL);
+        let info_reponse = ctap_state.process_command(&mut env, &command_cbor, DUMMY_CHANNEL);
 
-        let return_var = cbor_read(&command_res);
+        let expected_cbor = cbor_map_options! {
+            0x01 => None,
+            0x02 => cbor_bool!(true),
+        };
 
-        let export_cbor_value: Value = create_minimal_pairing_parameters_export();
+        let mut response_cbor = vec![0x03];
+        assert!(cbor_write(expected_cbor, &mut response_cbor).is_ok());
+        assert_eq!(info_reponse, response_cbor);
 
-        let mut command_cbor = vec![0x03];
-        assert!(cbor_write(export_cbor_value, &mut command_cbor).is_ok());
-        ctap_state.process_command(&mut env, &command_cbor, DUMMY_CHANNEL);
+        // let export_cbor_value: Value = create_minimal_pairing_parameters_export();
+        //
+        // let mut command_cbor = vec![0x03];
+        // assert!(cbor_write(export_cbor_value, &mut command_cbor).is_ok());
+        // ctap_state.process_command(&mut env, &command_cbor, DUMMY_CHANNEL);
         // TODO: add asserts here
     }
 
