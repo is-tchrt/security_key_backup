@@ -430,17 +430,15 @@ pub struct PairingExtensionInput {
     pub action: PairingExtensionAction,
     pub seed: Option<Value>,
 }
-//^^^Extend this in the command.rs for pairing from that gihub link
-//
+
 impl TryFrom<cbor::Value> for PairingExtensionInput {
     type Error = Ctap2StatusCode;
 
     fn try_from(cbor_value: cbor::Value) -> Result<Self, Ctap2StatusCode> {
         destructure_cbor_map! {
             let {
-            "seed" => seed,
-            "action" => action,
-            //Add stuff here need to be in order of length and alphabetical order
+            0x01 => action,
+            0x02 => seed,
             } = extract_map(cbor_value)?;
         }
         let action = action
