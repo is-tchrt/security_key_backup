@@ -18,7 +18,7 @@ use crate::env::Env;
 
 use super::data_formats::{
     BackupData, PublicKeyCredentialDescriptor, RecoveryExtensionAction, RecoveryExtensionInput,
-    RecoveryExtensionOutput
+    RecoveryExtensionOutput,
 };
 use super::status_code::Ctap2StatusCode;
 use super::storage::get_backup_data;
@@ -368,6 +368,13 @@ pub fn import_recovery_seed<E: Env>(
         let seed = cbor_read_recovery_seed(cbor_seed);
         let mut backup_data = cbor_read_backup(get_backup_data(env), env);
         backup_data.recovery_seeds.push(seed);
+        writeln!(
+            env.write(),
+            "recovery seeds list: {:?}",
+            backup_data.recovery_seeds
+        )
+        .unwrap();
+        backup_data.recovery_state += 1;
         cbor_store_backup(backup_data, env)
     } else {
         Err(StoreError::StorageError)
