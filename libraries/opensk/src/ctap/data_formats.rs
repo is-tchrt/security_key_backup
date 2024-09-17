@@ -440,6 +440,7 @@ impl TryFrom<cbor::Value> for PairingExtensionInput {
             let {
             "seed" => seed,
             "action" => action,
+                //TODO: 0x01 => action
             //Add stuff here need to be in order of length and alphabetical order
             } = extract_map(cbor_value)?;
         }

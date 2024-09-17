@@ -1647,7 +1647,7 @@ mod test {
     fn test_import_pairing() {
         let mut env = TestEnv::default();
         let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
-        let params: PairingExtensionInput = create_minimal_pairing_parameters_import();
+        let params: PairingExtensionInput = PairingExtensionInput::try_from(create_minimal_pairing_parameters_import()).unwrap();
         let pair_response = ctap_state.process_pairing(&mut env, params).unwrap();
         match pair_response {
             ResponseData::AuthenticatorPairing(AuthenticatorPairingResponse { success, seed }) => {
@@ -1664,7 +1664,7 @@ mod test {
     fn test_export_pairing() {
         let mut env = TestEnv::default();
         let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
-        let params: PairingExtensionInput = create_minimal_pairing_parameters_export();
+        let params: PairingExtensionInput = PairingExtensionInput::try_from(create_minimal_pairing_parameters_export()).unwrap();
         let pair_response = ctap_state.process_pairing(&mut env, params).unwrap();
         match pair_response {
             ResponseData::AuthenticatorPairing(AuthenticatorPairingResponse { success, seed }) => {
@@ -1709,7 +1709,7 @@ mod test {
         }
     }
 
-    fn create_minimal_pairing_parameters_import() -> PairingExtensionInput {
+    fn create_minimal_pairing_parameters_import() -> Value {
         let alg_value = Value::byte_string(vec![1]); // Algorithm byte
         let aaguid_value = Value::byte_string(vec![
             0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC,
@@ -1728,20 +1728,16 @@ mod test {
             (Value::unsigned(1), aaguid_value),
             (Value::unsigned(2), public_key_value),
         ]);
-        let cbor_value = cbor_map! {
+        cbor_map! {
             "seed" => cbor_seed,
             "action" => "import",
-        };
-
-        PairingExtensionInput::try_from(cbor_value).unwrap()
+        }
     }
 
-    fn create_minimal_pairing_parameters_export() -> PairingExtensionInput {
-        let cbor_value = cbor_map! {
+    fn create_minimal_pairing_parameters_export() -> Value {
+        cbor_map! {
             "action" => "export",
-        };
-
-        PairingExtensionInput::try_from(cbor_value).unwrap()
+        }
     }
 
     fn create_make_credential_parameters_with_exclude_list(
@@ -3190,6 +3186,26 @@ mod test {
             get_assertion_response,
             Err(Ctap2StatusCode::CTAP2_ERR_NOT_ALLOWED)
         );
+    }
+
+    #[test]
+    fn test_process_command_pairing() {
+        let mut env = TestEnv::default();
+        let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
+        let mut command_cbor = vec![0x03];
+        let input_cbor_value = create_minimal_pairing_parameters_import();
+
+        assert!(cbor_write(input_cbor_value, &mut command_cbor).is_ok());
+        let command_res = ctap_state.process_command(&mut env, &command_cbor, DUMMY_CHANNEL);
+
+        let return_var = cbor_read(&command_res);
+
+        let export_cbor_value: Value = create_minimal_pairing_parameters_export();
+
+        let mut command_cbor = vec![0x03];
+        assert!(cbor_write(export_cbor_value, &mut command_cbor).is_ok());
+        ctap_state.process_command(&mut env, &command_cbor, DUMMY_CHANNEL);
+        // TODO: add asserts here
     }
 
     #[test]
