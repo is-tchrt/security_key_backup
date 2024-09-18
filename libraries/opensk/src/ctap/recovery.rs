@@ -367,7 +367,9 @@ pub fn import_recovery_seed<E: Env>(
     if let Some(cbor_seed) = cbor_seed_option {
         let seed = cbor_read_recovery_seed(cbor_seed);
         let mut backup_data = cbor_read_backup(get_backup_data(env), env);
-        writeln!(env.write(), "seed: {:?}", seed).unwrap();
+        writeln!(env.write(), "alg: {:?}", seed.0).unwrap();
+        writeln!(env.write(), "aaguid: {:?}", seed.1).unwrap();
+        writeln!(env.write(), "seed: {:?}", seed.2).unwrap();
         backup_data.recovery_seeds.push(seed);
         writeln!(
             env.write(),
