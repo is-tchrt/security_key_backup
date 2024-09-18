@@ -62,16 +62,21 @@ pub fn init(env: &mut impl Env) -> Result<(), Ctap2StatusCode> {
 
 //Makes and stores backup data.
 pub fn make_backup_data<E: Env>(env: &mut E) {
-    let backup_data = BackupData::init(env);
-    // debug_ctap!(
-    //     env,
-    //     "Making backup public key: {:#?}",
-    //     backup_data.public_key
-    // );
-    let cbor_backup = cbor_backups(backup_data);
-    env.store()
-        .insert(_RESERVED_CREDENTIALS.start, &cbor_backup.as_slice())
-        .unwrap();
+    if (!get_backup_data(env)) {
+        writeln!(env.write(), "writing backup data").unwrap();
+        let backup_data = BackupData::init(env);
+        // debug_ctap!(
+        //     env,
+        //     "Making backup public key: {:#?}",
+        //     backup_data.public_key
+        // );
+        let cbor_backup = cbor_backups(backup_data);
+        env.store()
+            .insert(_RESERVED_CREDENTIALS.start, &cbor_backup.as_slice())
+            .unwrap();
+    } else {
+        writeln!(env.write(), "Didn't write backup data").unwrap();
+    }
 }
 
 //Returns the backup data.
