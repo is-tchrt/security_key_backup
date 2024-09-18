@@ -62,7 +62,7 @@ pub fn init(env: &mut impl Env) -> Result<(), Ctap2StatusCode> {
 
 //Makes and stores backup data.
 pub fn make_backup_data<E: Env>(env: &mut E) {
-    if (!get_backup_data(env)) {
+    if (get_backup_data(env).is_none()) {
         writeln!(env.write(), "writing backup data").unwrap();
         let backup_data = BackupData::init(env);
         // debug_ctap!(
