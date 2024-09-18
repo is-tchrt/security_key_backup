@@ -374,7 +374,7 @@ pub fn import_recovery_seed<E: Env>(
         writeln!(
             env.write(),
             "recovery seeds list: {:?}",
-            backup_data.recovery_seeds
+            backup_data.recovery_seeds[0].2
         )
         .unwrap();
         backup_data.recovery_state += 1;
