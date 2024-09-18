@@ -241,7 +241,7 @@ pub fn cbor_read_backup<E: Env>(data: Option<Vec<u8>>, env: &mut E) -> BackupDat
         "Working after destructuring cbor map, secret: {:?}, state {:?}, seeds: {:?}",
         secret,
         state,
-        seeds
+        seeds[0].2
     )
     .unwrap();
     let secret_key_cbor = secret.unwrap();
