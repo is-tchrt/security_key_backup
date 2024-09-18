@@ -1500,6 +1500,7 @@ impl<E: Env> CtapState<E> {
 
 #[cfg(test)]
 mod test {
+    use std::iter::Map;
     use super::client_pin::PIN_TOKEN_LENGTH;
     use super::command::{
         AuthenticatorClientPinParameters, AuthenticatorCredentialManagementParameters,
@@ -1519,7 +1520,7 @@ mod test {
     use crate::env::EcdhSk;
     use crate::test_helpers;
     use cbor::{cbor_array, cbor_array_vec, cbor_map};
-    use sk_cbor::{cbor_bool, Value};
+    use sk_cbor::{cbor_bool, cbor_unsigned, Value};
 
     // The keep-alive logic in the processing of some commands needs a channel ID to send
     // keep-alive packets to.
@@ -1730,14 +1731,14 @@ mod test {
             (Value::unsigned(2), public_key_value),
         ]);
         cbor_map! {
-            "seed" => cbor_seed,
-            "action" => "import",
+            0x01 => "import",
+            0x02 => cbor_seed,
         }
     }
 
     fn create_minimal_pairing_parameters_export() -> Value {
         cbor_map! {
-            "action" => "export",
+            0x01 => "export",
         }
     }
 
@@ -3194,26 +3195,52 @@ mod test {
         let mut env = TestEnv::default();
         let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
         let mut command_cbor = vec![0x03];
-        let input_cbor_value = create_minimal_pairing_parameters_import();
+        // let input_cbor_value = create_minimal_pairing_parameters_import();
+        //
+        // assert!(cbor_write(input_cbor_value, &mut command_cbor).is_ok());
+        // let info_reponse_import = ctap_state.process_command(&mut env, &command_cbor, DUMMY_CHANNEL);
+        //
+        // let expected_cbor_import = cbor_map_options! {
+        //     0x01 => None::<Vec<(Value, Value)>>,
+        //     0x02 => cbor_bool!(true),
+        // };
+        //
+        // // Not sure why we add the 0x00 below, but that is what happens in test_get_info
+        // let mut response_cbor = vec![0x00];
+        // assert!(cbor_write(expected_cbor_import, &mut response_cbor).is_ok());
+        // assert_eq!(info_reponse_import, response_cbor);
 
-        assert!(cbor_write(input_cbor_value, &mut command_cbor).is_ok());
-        let info_reponse = ctap_state.process_command(&mut env, &command_cbor, DUMMY_CHANNEL);
+        let export_cbor_value: Value = create_minimal_pairing_parameters_export();
 
-        let expected_cbor = cbor_map_options! {
-            0x01 => None,
-            0x02 => cbor_bool!(true),
+        assert!(cbor_write(export_cbor_value, &mut command_cbor).is_ok());
+        let info_reponse_export = ctap_state.process_command(&mut env, &command_cbor, DUMMY_CHANNEL);
+
+        let alg_value = Value::byte_string(vec![0]); // Algorithm byte
+        let aaguid_value = Value::byte_string(vec![
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+        let public_key_value = Value::byte_string(vec![
+            0x04, 0x81, 0xD7, 0x67, 0xDE,
+            0xDE, 0xBD, 0xB8, 0x38, 0xA2, 0x31, 0x98, 0x59, 0x54, 0x17, 0xC5, 0x45, 0x78, 0x1F, 0xEA, 0xC1,
+            0xB8, 0x9D, 0x6B, 0xC2, 0xBB, 0x33, 0x18, 0xED, 0x77, 0x92, 0x4A, 0x4D, 0x19, 0xF6, 0x7E, 0x41,
+            0x8C, 0x6B, 0x98, 0x21, 0x7A, 0x9A, 0x52, 0xDB, 0xDA, 0xA6, 0x0A, 0x31, 0x9A, 0xA7, 0x10, 0x23,
+            0xC6, 0xA0, 0x27, 0x0A, 0xE4, 0x63, 0xF3, 0x3C, 0x94, 0xB7, 0xA7, 0x8C
+        ]);
+
+        let cbor_seed = Value::map(vec![
+            (Value::unsigned(0), alg_value),
+            (Value::unsigned(1), aaguid_value),
+            (Value::unsigned(2), public_key_value),
+        ]);
+
+        let expected_cbor_export = cbor_map_options! {
+            0x01 => cbor_seed,
+            0x02 => cbor_bool!(true)
         };
 
-        let mut response_cbor = vec![0x03];
-        assert!(cbor_write(expected_cbor, &mut response_cbor).is_ok());
-        assert_eq!(info_reponse, response_cbor);
-
-        // let export_cbor_value: Value = create_minimal_pairing_parameters_export();
-        //
-        // let mut command_cbor = vec![0x03];
-        // assert!(cbor_write(export_cbor_value, &mut command_cbor).is_ok());
-        // ctap_state.process_command(&mut env, &command_cbor, DUMMY_CHANNEL);
-        // TODO: add asserts here
+        let mut response_cbor_export = vec![0x00];
+        assert!(cbor_write(expected_cbor_export, &mut response_cbor_export).is_ok());
+        assert_eq!(info_reponse_export, response_cbor_export);
     }
 
     #[test]
