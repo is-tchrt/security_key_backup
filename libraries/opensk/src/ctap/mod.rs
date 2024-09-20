@@ -1500,6 +1500,7 @@ impl<E: Env> CtapState<E> {
 
 #[cfg(test)]
 mod test {
+    use std::iter::Map;
     use super::client_pin::PIN_TOKEN_LENGTH;
     use super::command::{
         AuthenticatorClientPinParameters, AuthenticatorCredentialManagementParameters,
@@ -1519,7 +1520,7 @@ mod test {
     use crate::env::EcdhSk;
     use crate::test_helpers;
     use cbor::{cbor_array, cbor_array_vec, cbor_map};
-    use sk_cbor::Value;
+    use sk_cbor::{cbor_bool, cbor_unsigned, Value};
 
     // The keep-alive logic in the processing of some commands needs a channel ID to send
     // keep-alive packets to.
@@ -1645,11 +1646,37 @@ mod test {
     }
 
     #[test]
-    fn test_pairing() {
+    fn test_import_pairing() {
         let mut env = TestEnv::default();
         let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
-        let params: PairingExtensionInput = create_minimal_pairing_parameters();
+        let params: PairingExtensionInput = PairingExtensionInput::try_from(create_minimal_pairing_parameters_import()).unwrap();
         let pair_response = ctap_state.process_pairing(&mut env, params).unwrap();
+        match pair_response {
+            ResponseData::AuthenticatorPairing(AuthenticatorPairingResponse { success, seed }) => {
+                assert_eq!(success, true);
+                assert_eq!(seed, None);
+            }
+            _ => {
+                panic!("Response is not an AuthenticatorPairing variant");
+            }
+        }
+    }
+
+    #[test]
+    fn test_export_pairing() {
+        let mut env = TestEnv::default();
+        let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
+        let params: PairingExtensionInput = PairingExtensionInput::try_from(create_minimal_pairing_parameters_export()).unwrap();
+        let pair_response = ctap_state.process_pairing(&mut env, params).unwrap();
+        match pair_response {
+            ResponseData::AuthenticatorPairing(AuthenticatorPairingResponse { success, seed }) => {
+                assert_eq!(success, true);
+                assert_ne!(seed, None);
+            }
+            _ => {
+                panic!("Response is not an AuthenticatorPairing variant");
+            }
+        }
     }
 
     fn create_minimal_make_credential_parameters() -> AuthenticatorMakeCredentialParameters {
@@ -1684,7 +1711,7 @@ mod test {
         }
     }
 
-    fn create_minimal_pairing_parameters() -> PairingExtensionInput {
+    fn create_minimal_pairing_parameters_import() -> Value {
         let alg_value = Value::byte_string(vec![1]); // Algorithm byte
         let aaguid_value = Value::byte_string(vec![
             0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC,
@@ -1703,12 +1730,16 @@ mod test {
             (Value::unsigned(1), aaguid_value),
             (Value::unsigned(2), public_key_value),
         ]);
-        let cbor_value = cbor_map! {
-            "seed" => cbor_seed,
-            "action" => "import",
-        };
+        cbor_map! {
+            0x01 => "import",
+            0x02 => cbor_seed,
+        }
+    }
 
-        PairingExtensionInput::try_from(cbor_value).unwrap()
+    fn create_minimal_pairing_parameters_export() -> Value {
+        cbor_map! {
+            0x01 => "export",
+        }
     }
 
     fn create_make_credential_parameters_with_exclude_list(
@@ -3157,6 +3188,70 @@ mod test {
             get_assertion_response,
             Err(Ctap2StatusCode::CTAP2_ERR_NOT_ALLOWED)
         );
+    }
+
+    fn run_process_command_test(
+        env: &mut TestEnv,
+        ctap_state: &mut CtapState<TestEnv>,
+        command_cbor: &mut Vec<u8>,
+        expected_cbor: Value,
+    ) {
+        let info_response = ctap_state.process_command(env, command_cbor, DUMMY_CHANNEL);
+
+        // Add 0x00 to the response CBOR, consistent with the test_get_info function.
+        let mut response_cbor = vec![0x00];
+        assert!(cbor_write(expected_cbor, &mut response_cbor).is_ok());
+        assert_eq!(info_response, response_cbor);
+    }
+
+    #[test]
+    fn test_process_command_pairing_import() {
+        let mut env = TestEnv::default();
+        let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
+        let mut command_cbor = vec![0x03];
+        let input_cbor_value = create_minimal_pairing_parameters_import();
+
+        assert!(cbor_write(input_cbor_value, &mut command_cbor).is_ok());
+
+        let expected_cbor_import = cbor_map_options! {
+            0x01 => None::<Vec<(Value, Value)>>,
+            0x02 => cbor_bool!(true),
+        };
+
+        run_process_command_test(&mut env, &mut ctap_state, &mut command_cbor, expected_cbor_import);
+    }
+
+    #[test]
+    fn test_process_command_pairing_export() {
+        let mut env = TestEnv::default();
+        let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
+        let mut command_cbor = vec![0x03];
+        let export_cbor_value: Value = create_minimal_pairing_parameters_export();
+
+        assert!(cbor_write(export_cbor_value, &mut command_cbor).is_ok());
+
+        let alg_value = Value::byte_string(vec![0]); // Algorithm byte
+        let aaguid_value = Value::byte_string(vec![0x00; 16]); // AAGUID
+        let public_key_value = Value::byte_string(vec![
+            0x04, 0x81, 0xD7, 0x67, 0xDE,
+            0xDE, 0xBD, 0xB8, 0x38, 0xA2, 0x31, 0x98, 0x59, 0x54, 0x17, 0xC5, 0x45, 0x78, 0x1F, 0xEA, 0xC1,
+            0xB8, 0x9D, 0x6B, 0xC2, 0xBB, 0x33, 0x18, 0xED, 0x77, 0x92, 0x4A, 0x4D, 0x19, 0xF6, 0x7E, 0x41,
+            0x8C, 0x6B, 0x98, 0x21, 0x7A, 0x9A, 0x52, 0xDB, 0xDA, 0xA6, 0x0A, 0x31, 0x9A, 0xA7, 0x10, 0x23,
+            0xC6, 0xA0, 0x27, 0x0A, 0xE4, 0x63, 0xF3, 0x3C, 0x94, 0xB7, 0xA7, 0x8C
+        ]);
+
+        let cbor_seed = Value::map(vec![
+            (Value::unsigned(0), alg_value),
+            (Value::unsigned(1), aaguid_value),
+            (Value::unsigned(2), public_key_value),
+        ]);
+
+        let expected_cbor_export = cbor_map_options! {
+            0x01 => cbor_seed,
+            0x02 => cbor_bool!(true),
+        };
+
+        run_process_command_test(&mut env, &mut ctap_state, &mut command_cbor, expected_cbor_export);
     }
 
     #[test]

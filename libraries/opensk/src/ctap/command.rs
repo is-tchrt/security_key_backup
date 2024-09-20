@@ -676,18 +676,6 @@ mod test {
             expected_client_pin_parameters
         );
     }
-    
-    #[test]
-    fn test_deserialize_pairing() {
-        let cbor_value = cbor_map! {
-            "seed" => vec![0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F],
-            "action" => "import",
-        };
-        let returned_pairing_params =
-            PairingExtensionInput::try_from(cbor_value).unwrap();
-        
-        // TODO: add expected output and assert
-    }
 
     #[test]
     fn test_deserialize_get_info() {
