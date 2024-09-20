@@ -136,3 +136,4 @@ TODO: rewrite pairing to return AttestationResponse. att_stmt may be able to tak
 
 Change the try_from thing to use integers instead of strings, and things will work better.
 
+The relying party needs to parse all the recovery cred things and add a public key type (which is 0, for public key) to the beginning, before sending them back during the recovery step, so that the creds can be turned into PublicKeyCredentialDescriptors. This is formatted as a map with "id" => key_id, "type" => key_type, and "transports => transports, which I'm ignoring.

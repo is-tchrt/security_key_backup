@@ -104,6 +104,7 @@ fn process_recovery_seed<E: Env>(
         Err(Ctap2StatusCode::CTAP2_ERR_UNSUPPORTED_ALGORITHM)
     } else {
         let (credential_id, public_key) = make_credential(seed.clone(), env, rp_id);
+        writeln!(env.write(), "Credential ID: {:?}", credential_id).unwrap();
         let mut public_key_bytes = [0u8; 65];
         public_key.to_bytes_uncompressed(&mut public_key_bytes);
         let mut att_cred_data = seed.1.to_vec();
