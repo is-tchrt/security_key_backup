@@ -99,7 +99,7 @@ const AT_FLAG: u8 = 0x40;
 const ED_FLAG: u8 = 0x80;
 
 // CTAP2 specification section 6 requires that the depth of nested CBOR structures be limited to at most four levels.
-const MAX_CBOR_NESTING_DEPTH: i8 = 4;
+const MAX_CBOR_NESTING_DEPTH: i8 = 5;
 
 pub const KEEPALIVE_DELAY_MS: usize = 100;
 pub const TOUCH_TIMEOUT_MS: usize = 30000;
@@ -1500,7 +1500,6 @@ impl<E: Env> CtapState<E> {
 
 #[cfg(test)]
 mod test {
-    use std::iter::Map;
     use super::client_pin::PIN_TOKEN_LENGTH;
     use super::command::{
         AuthenticatorClientPinParameters, AuthenticatorCredentialManagementParameters,
@@ -1521,6 +1520,7 @@ mod test {
     use crate::test_helpers;
     use cbor::{cbor_array, cbor_array_vec, cbor_map};
     use sk_cbor::{cbor_bool, cbor_unsigned, Value};
+    use std::iter::Map;
 
     // The keep-alive logic in the processing of some commands needs a channel ID to send
     // keep-alive packets to.
@@ -1649,7 +1649,8 @@ mod test {
     fn test_import_pairing() {
         let mut env = TestEnv::default();
         let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
-        let params: PairingExtensionInput = PairingExtensionInput::try_from(create_minimal_pairing_parameters_import()).unwrap();
+        let params: PairingExtensionInput =
+            PairingExtensionInput::try_from(create_minimal_pairing_parameters_import()).unwrap();
         let pair_response = ctap_state.process_pairing(&mut env, params).unwrap();
         match pair_response {
             ResponseData::AuthenticatorPairing(AuthenticatorPairingResponse { success, seed }) => {
@@ -1666,7 +1667,8 @@ mod test {
     fn test_export_pairing() {
         let mut env = TestEnv::default();
         let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
-        let params: PairingExtensionInput = PairingExtensionInput::try_from(create_minimal_pairing_parameters_export()).unwrap();
+        let params: PairingExtensionInput =
+            PairingExtensionInput::try_from(create_minimal_pairing_parameters_export()).unwrap();
         let pair_response = ctap_state.process_pairing(&mut env, params).unwrap();
         match pair_response {
             ResponseData::AuthenticatorPairing(AuthenticatorPairingResponse { success, seed }) => {
@@ -3218,7 +3220,12 @@ mod test {
             0x02 => cbor_bool!(true),
         };
 
-        run_process_command_test(&mut env, &mut ctap_state, &mut command_cbor, expected_cbor_import);
+        run_process_command_test(
+            &mut env,
+            &mut ctap_state,
+            &mut command_cbor,
+            expected_cbor_import,
+        );
     }
 
     #[test]
@@ -3233,11 +3240,11 @@ mod test {
         let alg_value = Value::byte_string(vec![0]); // Algorithm byte
         let aaguid_value = Value::byte_string(vec![0x00; 16]); // AAGUID
         let public_key_value = Value::byte_string(vec![
-            0x04, 0x81, 0xD7, 0x67, 0xDE,
-            0xDE, 0xBD, 0xB8, 0x38, 0xA2, 0x31, 0x98, 0x59, 0x54, 0x17, 0xC5, 0x45, 0x78, 0x1F, 0xEA, 0xC1,
-            0xB8, 0x9D, 0x6B, 0xC2, 0xBB, 0x33, 0x18, 0xED, 0x77, 0x92, 0x4A, 0x4D, 0x19, 0xF6, 0x7E, 0x41,
-            0x8C, 0x6B, 0x98, 0x21, 0x7A, 0x9A, 0x52, 0xDB, 0xDA, 0xA6, 0x0A, 0x31, 0x9A, 0xA7, 0x10, 0x23,
-            0xC6, 0xA0, 0x27, 0x0A, 0xE4, 0x63, 0xF3, 0x3C, 0x94, 0xB7, 0xA7, 0x8C
+            0x04, 0x81, 0xD7, 0x67, 0xDE, 0xDE, 0xBD, 0xB8, 0x38, 0xA2, 0x31, 0x98, 0x59, 0x54,
+            0x17, 0xC5, 0x45, 0x78, 0x1F, 0xEA, 0xC1, 0xB8, 0x9D, 0x6B, 0xC2, 0xBB, 0x33, 0x18,
+            0xED, 0x77, 0x92, 0x4A, 0x4D, 0x19, 0xF6, 0x7E, 0x41, 0x8C, 0x6B, 0x98, 0x21, 0x7A,
+            0x9A, 0x52, 0xDB, 0xDA, 0xA6, 0x0A, 0x31, 0x9A, 0xA7, 0x10, 0x23, 0xC6, 0xA0, 0x27,
+            0x0A, 0xE4, 0x63, 0xF3, 0x3C, 0x94, 0xB7, 0xA7, 0x8C,
         ]);
 
         let cbor_seed = Value::map(vec![
@@ -3251,7 +3258,12 @@ mod test {
             0x02 => cbor_bool!(true),
         };
 
-        run_process_command_test(&mut env, &mut ctap_state, &mut command_cbor, expected_cbor_export);
+        run_process_command_test(
+            &mut env,
+            &mut ctap_state,
+            &mut command_cbor,
+            expected_cbor_export,
+        );
     }
 
     #[test]
