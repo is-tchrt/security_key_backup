@@ -753,7 +753,7 @@ impl<E: Env> CtapState<E> {
         writeln!(
             env.write(),
             "Entered process_make_credential: {:?}",
-            make_credential_params.extensions.recovery.unwrap()
+            &make_credential_params.extensions.recovery.unwrap()
         )
         .unwrap();
         //writeln!(env.write(), "Pairing: {:?}", extensions.pairing).unwrap();
