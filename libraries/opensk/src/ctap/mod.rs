@@ -744,7 +744,7 @@ impl<E: Env> CtapState<E> {
             user,
             pub_key_cred_params,
             exclude_list,
-            extensions,
+            ref extensions,
             options,
             pin_uv_auth_param,
             pin_uv_auth_protocol,
@@ -753,7 +753,7 @@ impl<E: Env> CtapState<E> {
         writeln!(
             env.write(),
             "Entered process_make_credential: {:?}",
-            &make_credential_params.extensions.recovery.unwrap()
+            make_credential_params.extensions.recovery.unwrap()
         )
         .unwrap();
         //writeln!(env.write(), "Pairing: {:?}", extensions.pairing).unwrap();
