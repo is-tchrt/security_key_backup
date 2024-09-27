@@ -744,18 +744,13 @@ impl<E: Env> CtapState<E> {
             user,
             pub_key_cred_params,
             exclude_list,
-            ref extensions,
+            extensions,
             options,
             pin_uv_auth_param,
             pin_uv_auth_protocol,
             enterprise_attestation,
         } = make_credential_params;
-        writeln!(
-            env.write(),
-            "Entered process_make_credential: {:?}",
-            make_credential_params.extensions.recovery.unwrap()
-        )
-        .unwrap();
+        writeln!(env.write(), "Entered process_make_credential").unwrap();
         //writeln!(env.write(), "Pairing: {:?}", extensions.pairing).unwrap();
 
         // let backup_data = BackupData::init(env);
