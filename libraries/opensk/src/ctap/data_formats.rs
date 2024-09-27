@@ -339,9 +339,9 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
         if allow_list_option.is_some() {
             let _old_allow_list = allow_list_option.unwrap();
             let mut _allow_list = Vec::<PublicKeyCredentialDescriptor>::new();
-            // for value in old_allow_list {
-            //     allow_list.push(PublicKeyCredentialDescriptor::try_from(value).unwrap());
-            // }
+            for value in old_allow_list {
+                allow_list.push(PublicKeyCredentialDescriptor::try_from(value).unwrap());
+            }
             // let allow_list = Some(allow_list);
             Ok(Self {
                 action,
