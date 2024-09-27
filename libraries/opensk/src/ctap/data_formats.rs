@@ -346,7 +346,7 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
             Ok(Self {
                 action,
                 rp_id,
-                allow_list,
+                allow_list: None,
             })
         } else {
             let allow_list: Option<Vec<PublicKeyCredentialDescriptor>> = None;
