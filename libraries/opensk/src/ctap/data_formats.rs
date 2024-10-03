@@ -342,11 +342,11 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
             for value in old_allow_list {
                 allow_list.push(PublicKeyCredentialDescriptor::try_from(value).unwrap());
             }
-            // let allow_list = Some(allow_list);
+            let allow_list = Some(allow_list);
             Ok(Self {
                 action,
                 rp_id,
-                allow_list: None,
+                allow_list,
             })
         } else {
             let allow_list: Option<Vec<PublicKeyCredentialDescriptor>> = None;
