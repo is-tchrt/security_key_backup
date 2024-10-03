@@ -36,14 +36,9 @@ pub fn process_recovery<E: Env>(
     } else if inputs.action == RecoveryExtensionAction::Generate {
         Ok(process_generate_command(env, inputs.rp_id, backup_data))
     } else if inputs.action == RecoveryExtensionAction::Recover {
+        let allow_list = inputs.allow_list.unwrap();
         writeln!(env.write(), "Correct if branch").unwrap();
-        process_recover_command::<E>(
-            env,
-            inputs.allow_list.unwrap(),
-            inputs.rp_id,
-            auth_data,
-            backup_data,
-        )
+        process_recover_command::<E>(env, allow_list, inputs.rp_id, auth_data, backup_data)
     } else {
         Err(Ctap2StatusCode::CTAP1_ERR_OTHER)
     }
