@@ -37,6 +37,7 @@ pub fn process_recovery<E: Env>(
         Ok(process_generate_command(env, inputs.rp_id, backup_data))
     } else if inputs.action == RecoveryExtensionAction::Recover {
         process_recover_command::<E>(
+            env,
             inputs.allow_list.unwrap(),
             inputs.rp_id,
             auth_data,
@@ -139,11 +140,13 @@ fn make_full_cred_id(alg: u8, cred_id: [u8; 81]) -> [u8; 82] {
 
 //Processes backup credential for account recovery.
 fn process_recover_command<E: Env>(
+    env: &mut E,
     allow_credentials: Vec<PublicKeyCredentialDescriptor>,
     rp_id: String,
     auth_data: Vec<u8>,
     backup_data: BackupData,
 ) -> Result<RecoveryExtensionOutput, Ctap2StatusCode> {
+    writeln!(env.write(), "Entered process_recover_command").unwrap();
     let mut sec_key_bytes: [u8; 32] = [08; 32];
     backup_data.secret_key.to_bytes(&mut sec_key_bytes);
     let credential_ids = process_allow_credentials(allow_credentials);
