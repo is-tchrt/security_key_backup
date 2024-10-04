@@ -189,7 +189,7 @@ fn process_allow_credentials(
 }
 
 //Gets the recovery credential_id and private key, formats the private_key as a SecKey, and returns them.
-fn get_credential_pair<E>(
+fn get_credential_pair<E: Env>(
     env: &mut E,
     credential_list: Vec<[u8; 81]>,
     rp_id: String,
