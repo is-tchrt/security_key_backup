@@ -198,6 +198,7 @@ fn get_credential_pair<E: Env>(
     let credential_option = backup::confirm_cred_ids(credential_list, rp_id, sec_key_bytes);
     writeln!(env.write(), "Passed Brennan's stuff").unwrap();
     if credential_option.is_some() {
+        writeln!(env.write(), "Correct if branch").unwrap();
         let credential = credential_option.unwrap();
         let mut private_key_bytes = [0u8; 32];
         credential.0.to_bytes(&mut private_key_bytes);
