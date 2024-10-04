@@ -154,7 +154,7 @@ fn process_recover_command<E: Env>(
     let credential_ids = process_allow_credentials(allow_credentials);
     writeln!(env.write(), "credential_ids: {:?}", credential_ids).unwrap();
     if let Some((secret_key, credential_id)) =
-        get_credential_pair(credential_ids, rp_id, sec_key_bytes)
+        get_credential_pair(env, credential_ids, rp_id, sec_key_bytes)
     {
         let mut signing_key_bytes = [0u8; 32];
         secret_key.to_bytes(&mut signing_key_bytes);
@@ -189,12 +189,14 @@ fn process_allow_credentials(
 }
 
 //Gets the recovery credential_id and private key, formats the private_key as a SecKey, and returns them.
-fn get_credential_pair(
+fn get_credential_pair<E>(
+    env: &mut E,
     credential_list: Vec<[u8; 81]>,
     rp_id: String,
     sec_key_bytes: [u8; 32],
 ) -> Option<(SecKey, [u8; 81])> {
     let credential_option = backup::confirm_cred_ids(credential_list, rp_id, sec_key_bytes);
+    writeln!(env.write(), "Passed Brennan's stuff").unwrap();
     if credential_option.is_some() {
         let credential = credential_option.unwrap();
         let mut private_key_bytes = [0u8; 32];
