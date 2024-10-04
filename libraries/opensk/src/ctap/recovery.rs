@@ -150,7 +150,9 @@ fn process_recover_command<E: Env>(
     writeln!(env.write(), "Entered process_recover_command").unwrap();
     let mut sec_key_bytes: [u8; 32] = [08; 32];
     backup_data.secret_key.to_bytes(&mut sec_key_bytes);
+    writeln!(env.write(), "Secret_Key_Bytes: {:?}", sec_key_bytes).unwrap();
     let credential_ids = process_allow_credentials(allow_credentials);
+    writeln!(env.write(), "credential_ids: {:?}", credential_ids).unwrap();
     if let Some((secret_key, credential_id)) =
         get_credential_pair(credential_ids, rp_id, sec_key_bytes)
     {
