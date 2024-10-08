@@ -85,12 +85,12 @@ fn process_recovery_seeds<E: Env>(
     seed_list: Vec<(u8, [u8; AAGUID_LENGTH], PubKey)>,
     env: &mut E,
     rp_id: String,
-) -> Vec<Vec<u8>> {
+) -> Vec<Value> {
     let mut creds = Vec::new();
     for seed in seed_list.iter() {
         let att_cred_data = process_recovery_seed(seed.clone(), env, rp_id.clone());
         if att_cred_data.is_ok() {
-            creds.push(att_cred_data.unwrap());
+            creds.push(att_cred_data.unwrap().into_cbor_value());
         }
     }
     creds
