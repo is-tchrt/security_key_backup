@@ -126,8 +126,8 @@ where
     R: RngCore,
 {
     let key_pair = generate_ephemeral_pair(rng); //key pair is (secKey, pubKey)
-    let cred_key = cred_key(&key_pair.0, &key_pair.1);
-    let mac_key = mac_key(&key_pair.0, &key_pair.1);
+    let cred_key = cred_key(&key_pair.0, &backup);
+    let mac_key = mac_key(&key_pair.0, &backup);
     let backup_pk = backup_pk(&cred_key, &backup);
     let cred_id = make_cred_id(key_pair.1, mac_key, rp_id);
     let backup_info = (cred_id, backup_pk);
