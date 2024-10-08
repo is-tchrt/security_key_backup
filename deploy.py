@@ -29,6 +29,7 @@ import sys
 import time
 from typing import Dict, List, Tuple
 
+print(sys.path)
 import colorama
 from six.moves import input
 import tockloader

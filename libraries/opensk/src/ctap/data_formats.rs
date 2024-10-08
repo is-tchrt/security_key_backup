@@ -363,7 +363,7 @@ impl TryFrom<cbor::Value> for RecoveryExtensionInput {
 pub struct RecoveryExtensionOutput {
     pub action: RecoveryExtensionAction,
     pub state: u64,
-    pub creds: Option<Vec<cbor::Value>>,
+    pub creds: Option<Vec<Vec<u8>>>,
     pub cred_id: Option<Vec<u8>>,
     pub sig: Option<Vec<u8>>,
 }
