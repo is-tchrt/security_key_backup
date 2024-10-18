@@ -129,12 +129,9 @@ fn make_credential<E: Env>(
     let mut full_cred_id = [08; 82];
     full_cred_id[0] = seed.0;
     full_cred_id[1..].copy_from_slice(&cred_id);
-    writeln!(
-        env.write(),
-        "Public key from backup protocol: {:x?}",
-        public_key
-    )
-    .unwrap();
+    let mut bytes = [0u8; 65];
+    public_key.to_bytes_uncompressed(&mut bytes);
+    writeln!(env.write(), "Public key from backup protocol: {:x?}", bytes).unwrap();
     (full_cred_id, public_key)
 }
 
