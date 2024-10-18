@@ -1,5 +1,6 @@
 use core::convert::TryInto;
 
+// use crate::ctap::data_formats::CoseKey;
 use alloc::borrow::ToOwned;
 use alloc::string::String;
 use alloc::vec;
@@ -160,6 +161,12 @@ fn process_recover_command<E: Env>(
         secret_key.to_bytes(&mut signing_key_bytes);
         let signing_key = PrivateKey::new_ecdsa_from_bytes(&mut signing_key_bytes)
             .expect("Couldn't get PrivatKey from bytes, recover.rs, process_recover_command");
+        writeln!(
+            env.write(),
+            "Pub_key: {:x?}",
+            signing_key.get_pub_key::<E>().unwrap()
+        )
+        .unwrap();
         writeln!(env.write(), "auth_data: {:x?}", auth_data.as_slice()).unwrap();
         let sig = signing_key.sign_and_encode::<E>(&auth_data).unwrap();
         let cred_id = make_full_cred_id(0, credential_id).to_vec();
