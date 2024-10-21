@@ -109,21 +109,13 @@ pub fn backup_sk(cred_key: [u8; 32], sec_key_bytes: [u8; 32]) -> SecKey {
     let scalar = sec_key.to_exponent().to_int();
     let mod_n = ec::exponent256::ExponentP256::modn(scalar);
     let cred_int = ec::int256::Int256::from_bin(&cred_key);
-    let _cred_ex = ec::exponent256::ExponentP256::from_int_checked(cred_int).unwrap();
-    let test = cred_int.modadd_vartime(&mod_n.to_int(), &ec::int256::Int256::N);
-    // let test = cred_ex.to_int().modd(&mod_n.to_int());
-    let test_result = ec::exponent256::ExponentP256::from_int_checked(test).unwrap();
-    let test_sec_key = Some(SecKey {
-        a: test_result.non_zero().unwrap(),
+    let result_int = cred_int.modadd_vartime(&mod_n.to_int(), &ec::int256::Int256::N);
+    let result_ex = ec::exponent256::ExponentP256::from_int_checked(result_int).unwrap();
+    let result_sec_key = Some(SecKey {
+        a: result_ex.non_zero().unwrap(),
     })
     .unwrap();
-    test_sec_key
-    // let result = &cred_ex * &mod_n;
-    // let sec_key = Some(SecKey {
-    //     a: result.non_zero().unwrap(),
-    // })
-    // .unwrap();
-    // sec_key
+    result_sec_key
 }
 
 /////////////////////////////Implementing stage 2/////////////////////////////
