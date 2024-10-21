@@ -108,6 +108,7 @@ fn process_recovery_seed<E: Env>(
     } else {
         let (credential_id, public_key) = make_credential(seed.clone(), env, rp_id);
         writeln!(env.write(), "Credential ID: {:?}", credential_id).unwrap();
+        writeln!(env.write(), "Sending public key: {:?}", public_key).unwrap();
         let mut public_key_bytes = [0u8; 65];
         public_key.to_bytes_uncompressed(&mut public_key_bytes);
         let mut att_cred_data = seed.1.to_vec();
@@ -215,6 +216,8 @@ fn get_credential_pair<E: Env>(
         credential.0.to_bytes(&mut private_key_bytes);
         let private_key = SecKey::from_bytes(&private_key_bytes).unwrap();
         // let private_key = PrivateKey::new_ecdsa_from_bytes(&private_key_bytes).unwrap();
+        writeln!(env.write(), "Secret key: {:?}", private_key).unwrap();
+        writeln!(env.write(), "Public key: {:?}", private_key.genpk()).unwrap();
         Some((private_key, credential.1))
     } else {
         None
