@@ -429,6 +429,8 @@ impl TryFrom<cbor::Value> for PairingExtensionAction {
 pub struct PairingExtensionInput {
     pub action: PairingExtensionAction,
     pub seed: Option<Value>,
+    pub pin_uv_auth_protocol: u64,
+    pub pin_uv_auth_param: Vec<u8>,
 }
 
 impl TryFrom<cbor::Value> for PairingExtensionInput {
@@ -439,13 +441,28 @@ impl TryFrom<cbor::Value> for PairingExtensionInput {
             let {
             0x01 => action,
             0x02 => seed,
+            0x03 => pin_uv_auth_protocol,
+            0x04 => pin_uv_auth_param,
             } = extract_map(cbor_value)?;
         }
         let action = action
             .map(PairingExtensionAction::try_from)
             .transpose()?
             .unwrap();
-        Ok(Self { action, seed })
+        let pin_uv_auth_protocol = pin_uv_auth_protocol
+            .map(extract_unsigned)
+            .transpose()?
+            .unwrap();
+        let pin_uv_auth_param = pin_uv_auth_param
+            .map(extract_byte_string)
+            .transpose()?
+            .unwrap();
+        Ok(Self {
+            action,
+            seed,
+            pin_uv_auth_protocol,
+            pin_uv_auth_param,
+        })
     }
 }
 
