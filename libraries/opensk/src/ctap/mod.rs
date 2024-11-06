@@ -675,7 +675,7 @@ impl<E: Env> CtapState<E> {
                 self.process_get_assertion(env, params, channel)
             }
             Command::AuthenticatorGetNextAssertion => self.process_get_next_assertion(env),
-            Command::AuthenticatorPairing(params) => self.process_pairing(env, params),
+            Command::AuthenticatorPairing(params) => self.process_pairing(env, params, channel),
             Command::AuthenticatorGetInfo => self.process_get_info(env),
             Command::AuthenticatorClientPin(params) => self.client_pin.process_command(env, params),
             Command::AuthenticatorReset => self.process_reset(env, channel),
@@ -1340,6 +1340,7 @@ impl<E: Env> CtapState<E> {
         &mut self,
         env: &mut E,
         inputs: PairingExtensionInput,
+        channel: Channel,
     ) -> Result<ResponseData, Ctap2StatusCode> {
         writeln!(
             env.write(),
@@ -1347,6 +1348,12 @@ impl<E: Env> CtapState<E> {
             inputs.action
         )
         .unwrap();
+        self.pin_uv_auth_precheck(
+            env,
+            &inputs.pin_uv_auth_param,
+            inputs.pin_uv_auth_protocol,
+            channel,
+        )?;
         match inputs.action {
             PairingExtensionAction::Import => Ok(ResponseData::AuthenticatorPairing(
                 AuthenticatorPairingResponse {
@@ -1652,7 +1659,9 @@ mod test {
         let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
         let params: PairingExtensionInput =
             PairingExtensionInput::try_from(create_minimal_pairing_parameters_import()).unwrap();
-        let pair_response = ctap_state.process_pairing(&mut env, params).unwrap();
+        let pair_response = ctap_state
+            .process_pairing(&mut env, params, DUMMY_CHANNEL)
+            .unwrap();
         match pair_response {
             ResponseData::AuthenticatorPairing(AuthenticatorPairingResponse { success, seed }) => {
                 assert_eq!(success, true);
@@ -1670,7 +1679,9 @@ mod test {
         let mut ctap_state = CtapState::<TestEnv>::new(&mut env);
         let params: PairingExtensionInput =
             PairingExtensionInput::try_from(create_minimal_pairing_parameters_export()).unwrap();
-        let pair_response = ctap_state.process_pairing(&mut env, params).unwrap();
+        let pair_response = ctap_state
+            .process_pairing(&mut env, params, DUMMY_CHANNEL)
+            .unwrap();
         match pair_response {
             ResponseData::AuthenticatorPairing(AuthenticatorPairingResponse { success, seed }) => {
                 assert_eq!(success, true);
