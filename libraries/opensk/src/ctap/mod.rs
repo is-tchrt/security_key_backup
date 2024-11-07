@@ -1354,6 +1354,7 @@ impl<E: Env> CtapState<E> {
             inputs.pin_uv_auth_protocol,
             channel,
         )?;
+        check_user_presence(env, channel)?;
         match inputs.action {
             PairingExtensionAction::Import => Ok(ResponseData::AuthenticatorPairing(
                 AuthenticatorPairingResponse {
