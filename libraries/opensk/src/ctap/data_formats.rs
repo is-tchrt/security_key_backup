@@ -285,6 +285,12 @@ impl From<PublicKeyCredentialDescriptor> for cbor::Value {
     }
 }
 
+/*
+This is an enum containing each possible action for the recovery extension.
+I implement TryFrom<cbor::Value> for this data type so that I have a way to
+read the CBOR input that I get from the client. The data is sent as a string,
+then I read it into the enum.
+*/
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum RecoveryExtensionAction {
     #[default]
@@ -310,6 +316,13 @@ impl TryFrom<cbor::Value> for RecoveryExtensionAction {
     }
 }
 
+/*
+Struct for the ctap input for the recovery extension. It has an action, which
+can be State, Generate or Recover, an rp_id and an allow_list, which is where
+we get the backup seeds for processing the backup section of the protocol. I
+implemented TryFrom<cbor::Value> for this struct so that we can read the data
+from the client.
+*/
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RecoveryExtensionInput {
     //Has all the inputs from the RP for the recovery extension.
@@ -318,6 +331,16 @@ pub struct RecoveryExtensionInput {
     pub allow_list: Option<Vec<PublicKeyCredentialDescriptor>>,
 }
 
+/*
+When doing the destructure_cbor_map! thing it's important to put the different
+options in order of increasing length, because that's how they're encoded in
+CBOR. That function returns each of those three things as CBOR value. The rest
+of this function takes each of those values and pulls out the correct data
+type, then packs them all into a RecoveryExtensionInput struct. The tricky
+part here was the allow_list, which I had to loop through because it's a vector
+of Values, so it couldn't extract them all at once because the nesting was too
+deep.
+*/
 impl TryFrom<cbor::Value> for RecoveryExtensionInput {
     type Error = Ctap2StatusCode;
 
