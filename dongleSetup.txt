@@ -1,0 +1,16 @@
+download nrfutil-6.1.7.tar.gz from: https://github.com/NordicSemiconductor/pc-nrfutil/releases
+extract to a memorable place
+
+cd into the opensk dir
+run ./reset.sh
+modify line 37 in setup.sh to python3.10
+run ./setup.py
+
+run, source py_virtual_env/bin/activate
+navigate to the nrfutil-6.1.7 file you extracted
+run, pip3 install .
+
+navigate back to opensk dir
+
+run sudo /bin/bash -c 'source /home/kaladin/Documents/research/OpenSK/py_virtual_env/bin/activate && ./deploy.py --board=nrf52840_dongle_dfu --opensk --programmer=nordicdfu'
+ ^^*modified for your own dir and file system of course*
