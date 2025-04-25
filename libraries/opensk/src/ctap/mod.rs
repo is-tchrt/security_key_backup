@@ -1095,6 +1095,9 @@ impl<E: Env> CtapState<E> {
             } else {
                 None
             };
+            if extensions.recovery.is_some() {
+                writeln!(env.write(), "Recovery exists").unwrap();
+            }
             let recovery_output = if extensions.recovery.is_some() {
                 Some(
                     recovery::process_recovery(
@@ -1250,7 +1253,8 @@ impl<E: Env> CtapState<E> {
         if options.up {
             flags |= UP_FLAG;
         }
-        if extensions.hmac_secret.is_some() || extensions.cred_blob {
+        if extensions.hmac_secret.is_some() || extensions.cred_blob || extensions.recovery.is_some()
+        {
             flags |= ED_FLAG;
         }
 

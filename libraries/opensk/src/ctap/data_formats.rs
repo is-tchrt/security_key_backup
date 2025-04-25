@@ -566,6 +566,7 @@ impl TryFrom<cbor::Value> for GetAssertionExtensions {
         destructure_cbor_map! {
             let {
                 "credBlob" => cred_blob,
+                "recovery" => recovery,
                 "hmac-secret" => hmac_secret,
                 "largeBlobKey" => large_blob_key,
             } = extract_map(cbor_value)?;
@@ -581,7 +582,7 @@ impl TryFrom<cbor::Value> for GetAssertionExtensions {
                 return Err(Ctap2StatusCode::CTAP2_ERR_INVALID_OPTION);
             }
         }
-        let recovery = None;
+        let recovery = recovery.map(RecoveryExtensionInput::try_from).transpose()?;
         Ok(Self {
             hmac_secret,
             cred_blob,
