@@ -37,9 +37,10 @@ pub fn process_recovery<E: Env>(
         writeln!(env.write(), "Doing the state thing").unwrap();
         Ok(process_state_command(backup_data.recovery_state))
     } else if inputs.action == RecoveryExtensionAction::Generate {
+        writeln!(env.write(), "Doing the generate thing").unwrap();
         Ok(process_generate_command(env, inputs.rp_id, backup_data))
     } else if inputs.action == RecoveryExtensionAction::Recover {
-        writeln!(env.write(), "Correct if branch").unwrap();
+        writeln!(env.write(), "Doing the recover thing").unwrap();
         process_recover_command::<E>(
             env,
             inputs.allow_list.unwrap(),

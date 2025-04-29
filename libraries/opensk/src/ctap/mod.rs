@@ -627,7 +627,6 @@ impl<E: Env> CtapState<E> {
         command: Command,
         channel: Channel,
     ) -> Result<ResponseData, Ctap2StatusCode> {
-        writeln!(env.write(), "Entered process_parsed_command").unwrap();
         // The auth token timeouts are checked once here, to make error codes consistent. If your
         // auth token hasn't timed out now, you can fully use it for this command.
         self.client_pin.update_timeouts(env);
@@ -666,7 +665,6 @@ impl<E: Env> CtapState<E> {
         command: Command,
         channel: Channel,
     ) -> Result<ResponseData, Ctap2StatusCode> {
-        writeln!(env.write(), "Entered process_fido_command").unwrap();
         match command {
             Command::AuthenticatorMakeCredential(params) => {
                 self.process_make_credential(env, params, channel)
@@ -750,26 +748,6 @@ impl<E: Env> CtapState<E> {
             pin_uv_auth_protocol,
             enterprise_attestation,
         } = make_credential_params;
-        writeln!(env.write(), "Entered process_make_credential").unwrap();
-        //writeln!(env.write(), "Pairing: {:?}", extensions.pairing).unwrap();
-
-        // let backup_data = BackupData::init(env);
-        // writeln!(
-        //     env.write(),
-        //     "Writing public key: {:#?}, state: {:?}, seeds: {:#?}",
-        //     backup_data.public_key,
-        //     backup_data.recovery_state,
-        //     backup_data.recovery_seeds
-        // )
-        // .unwrap();
-        // let cbor_backup = cbor_backups(backup_data, env);
-        // env.store()
-        //     .insert(
-        //         storage::key::_RESERVED_CREDENTIALS.start,
-        //         &cbor_backup.as_slice(),
-        //     )
-        //     .unwrap();
-        // recovery::cbor_read_backup(storage::get_backup_data(env), env);
 
         self.pin_uv_auth_precheck(env, &pin_uv_auth_param, pin_uv_auth_protocol, channel)?;
 
@@ -866,7 +844,6 @@ impl<E: Env> CtapState<E> {
 
         check_user_presence(env, channel)?;
         self.client_pin.clear_token_flags();
-        // writeln!(env.write(), "Parameters: {:?}", extensions).unwrap();
 
         let default_cred_protect = env.customization().default_cred_protect();
         let mut cred_protect_policy = extensions.cred_protect;
@@ -888,7 +865,6 @@ impl<E: Env> CtapState<E> {
             None
         };
         let recovery = extensions.recovery;
-        // writeln!(env.write(), "Testing: {:?}", recovery).expect("Printing didn't work quite right");
         let has_extension_output = extensions.hmac_secret
             || extensions.cred_protect.is_some()
             || min_pin_length
@@ -967,7 +943,6 @@ impl<E: Env> CtapState<E> {
             let cred_protect_output = extensions.cred_protect.and(cred_protect_policy);
             let recovery_output = if recovery.is_some() {
                 let inputs = recovery.unwrap();
-                // writeln!(env.write(), "Recovery inputs: {:?}", inputs).unwrap();
                 let recovery_output_result =
                     recovery::process_recovery(inputs, env, auth_data.clone());
                 if recovery_output_result.is_err() {
@@ -977,17 +952,6 @@ impl<E: Env> CtapState<E> {
             } else {
                 None
             };
-            // if let Some(inputs) = recovery {
-            //     let recovery_output_result =
-            //         recovery::process_recovery(inputs, env, rp_id, auth_data);
-            //     if recovery_output_result.is_err() {
-            //         recovery_output_result
-            //     } else {
-            //         let recovery_output = Some(recovery_output_result.unwrap());
-            //     }
-            // } else {
-            //     let recovery_output: Option<RecoveryExtensionOutput> = None;
-            // }
             let extensions_output = cbor_map_options! {
                 "credBlob" => cred_blob_output,
                 "credProtect" => cred_protect_output,
@@ -1095,9 +1059,6 @@ impl<E: Env> CtapState<E> {
             } else {
                 None
             };
-            if extensions.recovery.is_some() {
-                writeln!(env.write(), "Recovery exists").unwrap();
-            }
             let recovery_output = if extensions.recovery.is_some() {
                 Some(
                     recovery::process_recovery(
@@ -1346,12 +1307,6 @@ impl<E: Env> CtapState<E> {
         inputs: PairingExtensionInput,
         channel: Channel,
     ) -> Result<ResponseData, Ctap2StatusCode> {
-        writeln!(
-            env.write(),
-            "Entered process pairing. Inputs: {:?}",
-            inputs.action
-        )
-        .unwrap();
         self.pin_uv_auth_precheck(
             env,
             &inputs.pin_uv_auth_param,
