@@ -81,7 +81,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use byteorder::{BigEndian, ByteOrder};
 use core::convert::TryFrom;
-use core::fmt::Write;
+// use core::fmt::Write;
 use recovery::{export_recovery_seed, import_recovery_seed};
 // use data_formats::BackupData;
 use rand_core::RngCore;
