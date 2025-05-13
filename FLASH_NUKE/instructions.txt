@@ -1,0 +1,13 @@
+** If your nrf52840 dongle is no longer pairing or working correctly even after a reflash
+** get the nrf connect app from https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-Desktop
+
+
+run ./nrfconnect-5.1.0-x86_64.appimage --no-sandbox
+
+put the dongle in dfu mode
+
+in the connect app use the programmer option to load the mbr.hex and all_ff_fill.hex and write to the dongle
+
+**be very carful to not overwrite the boot loader, you cannot fix it unless you sodier a debugger onto to dongle
+
+the dongle should no be reset and you can flash OpenSK to it normally
