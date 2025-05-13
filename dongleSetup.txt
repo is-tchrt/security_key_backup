@@ -14,3 +14,6 @@ navigate back to opensk dir
 
 run sudo /bin/bash -c 'source /home/kaladin/Documents/research/OpenSK/py_virtual_env/bin/activate && ./deploy.py --board=nrf52840_dongle_dfu --opensk --programmer=nordicdfu'
  ^^*modified for your own dir and file system of course*
+
+ **sometimes you need this: sudo env "PATH=$PATH" /bin/bash -c 'source /home/kaladin/Documents/research/OpenSK/py_virtual_env/bin/activate && ./deploy.py --board=nrf52840_dongle_dfu --opensk --programmer=nordicdfu'
+**sudo doesnt always inherit from the path so even though the nrfutil is present it wont see it.
