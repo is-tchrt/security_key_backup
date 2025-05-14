@@ -10,4 +10,4 @@ in the connect app use the programmer option to load the mbr.hex and all_ff_fill
 
 **be very carful to not overwrite the boot loader, you cannot fix it unless you sodier a debugger onto to dongle
 
-the dongle should no be reset and you can flash OpenSK to it normally
+the dongle should now be reset and you can flash OpenSK to it normally
