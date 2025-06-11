@@ -944,7 +944,7 @@ impl<E: Env> CtapState<E> {
             let recovery_output = if recovery.is_some() {
                 let inputs = recovery.unwrap();
                 let recovery_output_result =
-                    recovery::process_recovery(inputs, env, auth_data.clone());
+                    recovery::process_recovery(inputs, env, auth_data.clone(), client_data_hash.clone());
                 if recovery_output_result.is_err() {
                     return Err(recovery_output_result.err().unwrap());
                 }
@@ -1065,6 +1065,7 @@ impl<E: Env> CtapState<E> {
                         extensions.recovery.unwrap(),
                         env,
                         auth_data.clone(),
+                        client_data_hash.clone(),
                     )
                     .unwrap(),
                 )

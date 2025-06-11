@@ -34,7 +34,7 @@ check_command () {
   fi
 }
 check_command rustup " Follow the steps under https://rustup.rs/ to install it."
-python3.10 -m venv "$PY_VENV_NAME"
+python3 -m venv "$PY_VENV_NAME"
 "$PYTHON" -m pip install --upgrade pip setuptools wheel
 check_command "$PIP"
 

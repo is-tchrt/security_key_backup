@@ -30,6 +30,7 @@ pub fn process_recovery<E: Env>(
     inputs: RecoveryExtensionInput,
     env: &mut E,
     auth_data: Vec<u8>,
+    clinet_data_hash: Vec<u8>,
 ) -> Result<RecoveryExtensionOutput, Ctap2StatusCode> {
     writeln!(env.write(), "processing recovery and stuff like that").unwrap();
     let backup_data = cbor_read_backup(get_backup_data(env), env);
@@ -46,6 +47,7 @@ pub fn process_recovery<E: Env>(
             inputs.allow_list.unwrap(),
             inputs.rp_id,
             auth_data,
+            clinet_data_hash,
             backup_data,
         )
     } else {
@@ -153,6 +155,7 @@ fn process_recover_command<E: Env>(
     allow_credentials: Vec<PublicKeyCredentialDescriptor>,
     rp_id: String,
     auth_data: Vec<u8>,
+    client_data_hash: Vec<u8>,
     backup_data: BackupData,
 ) -> Result<RecoveryExtensionOutput, Ctap2StatusCode> {
     writeln!(env.write(), "Entered process_recover_command").unwrap();
@@ -175,7 +178,13 @@ fn process_recover_command<E: Env>(
         )
         .unwrap();
         writeln!(env.write(), "auth_data: {:x?}", auth_data.as_slice()).unwrap();
-        let sig = signing_key.sign_and_encode::<E>(&auth_data).unwrap();
+
+        let mut to_sign = auth_data.clone();
+        to_sign.extend(client_data_hash.clone());
+        writeln!(env.write(), "to_sign: {:x?}", to_sign.as_slice()).unwrap();
+        writeln!(env.write(),"clinet_data_hash: {:x?}", client_data_hash.clone()).unwrap();
+
+        let sig = signing_key.sign_and_encode::<E>(&to_sign).unwrap();
         let cred_id = make_full_cred_id(0, credential_id).to_vec();
         Ok(RecoveryExtensionOutput {
             action: RecoveryExtensionAction::Recover,
